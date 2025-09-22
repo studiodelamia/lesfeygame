@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les Fey, le jeu 💅🏽</title>
+    <style>
+        @font-face {
+            font-family: 'DimitriFont';
+            src: url('./font/DIMITRI_.TTF') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('lagif.gif') center/cover no-repeat;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .game-logo {
+            width: auto;
+            max-width: 500px;
+            height: auto;
+            margin-bottom: 2rem;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .character-selection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            margin-top: -3rem;
+        }
+
+        .background-character {
+            width: 180px;
+            height: 320px;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .background-character:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .main-character {
+            width: 280px;
+            height: 500px;
+            background-size: cover;
+            background-position: center;
+            transition: all 0.5s ease;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .arrow-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(100,100,100,0.1);
+            border: 2px solid #333;
+            color: #333;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .arrow-btn:hover {
+            background: rgba(100,100,100,0.2);
+            transform: scale(1.1);
+        }
+
+        .character-info {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .character-name {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: white;
+            font-family: 'DimitriFont', 'Arial Black', Arial, sans-serif;
+        }
+
+        .name-input-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            font-family: 'DimitriFont', 'Arial Black', Arial, sans-serif;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.6);
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid white;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sound-toggle:hover { background: rgba(0,0,0,0.9); transform: scale(1.1); }
+        .sound-toggle.muted { background: rgba(255,0,0,0.7); }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffd700;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <button class="sound-toggle" id="soundToggle">🔊</button>
+    <audio id="backgroundMusic" loop>
+        <source src="music/Latto, Ice Spice - Gyatt (Audio).mp3" type="audio/mpeg">
+        Votre navigateur ne supporte pas l'audio.
+    </audio>
+
+    <div class="stars" id="stars"></div>
+
+    <img src="baddielogo.png.PNG" alt="Logo du jeu" class="game-logo">
+
+    <div class="character-selection">
+        <div class="background-character" id="leftChar"></div>
+        <button class="arrow-btn" id="prevBtn">‹</button>
+        <div class="main-character" id="mainChar"></div>
+        <button class="arrow-btn" id="nextBtn">›</button>
+        <div class="background-character" id="rightChar"></div>
+    </div>
+
+    <div class="character-info">
+        <div class="character-name" id="charName">Aria</div>
+    </div>
+
+    <div class="name-input-section">
+        <button class="start-btn" id="startBtn">💅🏽 Commencer l'Aventure</button>
+    </div>
+
+    <script>
+        const characters = [
+            { image: 'images/char1.png.PNG', name: 'Aria' },
+            { image: 'images/char2.png.PNG', name: 'Luna' },
+            { image: 'images/char3.png.PNG', name: 'Zara' },
+            { image: 'images/char4.png.PNG', name: 'Nova' }
+        ];
+
+        let currentIndex = 0;
+
+        const mainChar = document.getElementById('mainChar');
+        const leftChar = document.getElementById('leftChar');
+        const rightChar = document.getElementById('rightChar');
+        const charName = document.getElementById('charName');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const startBtn = document.getElementById('startBtn');
+        const soundToggle = document.getElementById('soundToggle');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        function updateDisplay() {
+            const current = characters[currentIndex];
+            const prev = characters[(currentIndex - 1 + characters.length) % characters.length];
+            const next = characters[(currentIndex + 1) % characters.length];
+
+            mainChar.style.animation = 'none';
+            mainChar.offsetHeight;
+            mainChar.style.animation = 'fadeIn 0.8s ease-in-out';
+
+            mainChar.style.backgroundImage = `url('${current.image}')`;
+            leftChar.style.backgroundImage = `url('${prev.image}')`;
+            rightChar.style.backgroundImage = `url('${next.image}')`;
+
+            charName.textContent = current.name;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+            updateDisplay();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % characters.length;
+            updateDisplay();
+        });
+
+        leftChar.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+            updateDisplay();
+        });
+
+        rightChar.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % characters.length;
+            updateDisplay();
+        });
+
+        startBtn.addEventListener('click', () => {
+            const selectedChar = characters[currentIndex].name.trim();
+            switch(selectedChar) {
+                case 'Luna':
+                    window.location.href = 'luna-world.html';
+                    break;
+                case 'Aria':
+                    window.location.href = 'aria-world.html';
+                    break;
+                case 'Zara':
+                    alert('🚧 Le monde de Zara arrive bientôt, elle est pas ready les fey! 🚧');
+                    break;
+                case 'Nova':
+                    alert('🚧 Le monde de Nova arrive bientôt, elle est pas ready les fey! 🚧');
+                    break;
+                default:
+                    alert(`🎉 Bienvenue dans l'aventure ! 🎮\n\nTon personnage: ${selectedChar}`);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+                updateDisplay();
+            } else if (e.key === 'ArrowRight') {
+                currentIndex = (currentIndex + 1) % characters.length;
+                updateDisplay();
+            } else if (e.key === 'Enter') {
+                startBtn.click();
+            }
+        });
+
+        let isMuted = false;
+        soundToggle.addEventListener('click', () => {
+            if (isMuted) {
+                backgroundMusic.play();
+                soundToggle.textContent = '🔊';
+                soundToggle.classList.remove('muted');
+                isMuted = false;
+            } else {
+                backgroundMusic.pause();
+                soundToggle.textContent = '🔇';
+                soundToggle.classList.add('muted');
+                isMuted = true;
+            }
+        });
+
+        window.addEventListener('click', () => {
+            if (!isMuted && backgroundMusic.paused) {
+                backgroundMusic.play().catch(() => console.log('Autoplay bloqué'));
+            }
+        }, { once: true });
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        updateDisplay();
+        createStars();
+    </script>
+</body>
+</html>

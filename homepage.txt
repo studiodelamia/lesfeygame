@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choisis ton Personnage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .character-selection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .background-character {
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            border: 3px solid rgba(255,255,255,0.3);
+            background-size: cover;
+            background-position: center;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .background-character:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .main-character {
+            width: 200px;
+            height: 200px;
+            border-radius: 20px;
+            border: 4px solid #fff;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.5s ease;
+        }
+
+        .arrow-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .arrow-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.1);
+        }
+
+        .character-info {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .character-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .character-description {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .name-input-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .name-input {
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            text-align: center;
+            min-width: 250px;
+        }
+
+        .name-input::placeholder {
+            color: #999;
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255,107,107,0.4);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(255,107,107,0.6);
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <h1 class="game-title">✨ Choisis ton Héros ✨</h1>
+    
+    <div class="character-selection">
+        <div class="background-character" id="leftChar"></div>
+        <button class="arrow-btn" id="prevBtn">‹</button>
+        <div class="main-character" id="mainChar"></div>
+        <button class="arrow-btn" id="nextBtn">›</button>
+        <div class="background-character" id="rightChar"></div>
+    </div>
+    
+    <div class="character-info">
+        <div class="character-name" id="charName">Aria</div>
+        <div class="character-description" id="charDesc">Guerrière courageuse aux pouvoirs magiques</div>
+    </div>
+    
+    <div class="name-input-section">
+        <input type="text" class="name-input" id="playerName" placeholder="Donne un nom à ton personnage...">
+        <button class="start-btn" id="startBtn">🚀 Commencer l'Aventure</button>
+    </div>
+
+    <script>
+        // Données des personnages
+        const characters = [
+            {
+                image: 'images/char1.png.PNG',
+                name: 'Aria',
+                description: 'Guerrière courageuse aux pouvoirs magiques'
+            },
+            {
+                image: 'images/char2.png.PNG',
+                name: 'Luna',
+                description: 'Archère mystérieuse de la forêt enchantée'
+            },
+            {
+                image: 'images/char3.png.PNG',
+                name: 'Zara',
+                description: 'Mage puissante maîtrisant les éléments'
+            },
+            {
+                image: 'images/char4.png.PNG',
+                name: 'Nova',
+                description: 'Aventurière intrépide aux mille talents'
+            }
+        ];
+
+        let currentIndex = 0;
+
+        // Éléments DOM
+        const mainChar = document.getElementById('mainChar');
+        const leftChar = document.getElementById('leftChar');
+        const rightChar = document.getElementById('rightChar');
+        const charName = document.getElementById('charName');
+        const charDesc = document.getElementById('charDesc');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const startBtn = document.getElementById('startBtn');
+        const playerName = document.getElementById('playerName');
+
+        // Fonction pour mettre à jour l'affichage
+        function updateDisplay() {
+            const current = characters[currentIndex];
+            const prev = characters[(currentIndex - 1 + characters.length) % characters.length];
+            const next = characters[(currentIndex + 1) % characters.length];
+
+            mainChar.style.backgroundImage = `url('${current.image}')`;
+            leftChar.style.backgroundImage = `url('${prev.image}')`;
+            rightChar.style.backgroundImage = `url('${next.image}')`;
+
+            charName.textContent = current.name;
+            charDesc.textContent = current.description;
+        }
+
+        // Navigation
+        prevBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+            updateDisplay();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % characters.length;
+            updateDisplay();
+        });
+
+        // Clic sur les personnages en arrière-plan
+        leftChar.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+            updateDisplay();
+        });
+
+        rightChar.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % characters.length;
+            updateDisplay();
+        });
+
+        // Bouton de démarrage
+        startBtn.addEventListener('click', () => {
+            const customName = playerName.value.trim();
+            const finalName = customName || characters[currentIndex].name;
+            
+            alert(`🎉 Bienvenue dans l'aventure, ${finalName} ! 🎮\n\nTon personnage: ${characters[currentIndex].name}\nDescription: ${characters[currentIndex].description}`);
+        });
+
+        // Navigation au clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+                updateDisplay();
+            } else if (e.key === 'ArrowRight') {
+                currentIndex = (currentIndex + 1) % characters.length;
+                updateDisplay();
+            } else if (e.key === 'Enter') {
+                startBtn.click();
+            }
+        });
+
+        // Créer des étoiles animées
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Initialisation
+        updateDisplay();
+        createStars();
+    </script>
+</body>
+</html>
