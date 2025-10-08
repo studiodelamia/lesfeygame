@@ -1,50 +1,149 @@
-body {
-    background-color: #fce4f4;
-    font-family: 'Arial', sans-serif;
-    text-align: center;
-    padding: 20px;
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sélection de Personnage</title>
+    <style>
+        body {
+            background-color: #fce4f4;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
 
-h1 {
-    color: #ff69b4;
-    font-size: 2.5em;
-}
+        h1 {
+            color: #ff69b4;
+            font-size: 2.5em;
+        }
 
-.character-selector {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0;
-}
+        .character-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
 
-.characters img {
-    width: 150px;
-    border-radius: 15px;
-    transition: transform 0.3s, opacity 0.3s;
-}
+        .characters {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
 
-#main-char {
-    width: 250px;
-    border: 3px solid #ff69b4;
-}
+        .characters img {
+            width: 150px;
+            border-radius: 15px;
+            transition: transform 0.3s, opacity 0.3s;
+        }
 
-#left-char, #right-char {
-    opacity: 0.5;
-}
+        #main-char {
+            width: 250px;
+            border: 3px solid #ff69b4;
+        }
 
-.name-input input {
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ff69b4;
-    margin-right: 10px;
-}
+        #left-char, #right-char {
+            opacity: 0.5;
+        }
 
-.name-input button {
-    padding: 10px 20px;
-    border-radius: 10px;
-    background-color: #ff69b4;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
+        button {
+            padding: 10px 20px;
+            border-radius: 10px;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        button:hover {
+            background-color: #ff1493;
+            transform: scale(1.05);
+        }
+
+        .name-input {
+            margin-top: 20px;
+        }
+
+        .name-input input {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ff69b4;
+            margin-right: 10px;
+        }
+
+        .name-input button {
+            padding: 10px 20px;
+            border-radius: 10px;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Choisis ton personnage</h1>
+    
+    <div class="character-selector">
+        <button id="prev">◀</button>
+        
+        <div class="characters">
+            <img id="left-char" src="images/char3.png" alt="Personnage gauche">
+            <img id="main-char" src="images/char1.png" alt="Personnage principal">
+            <img id="right-char" src="images/char2.png" alt="Personnage droit">
+        </div>
+        
+        <button id="next">▶</button>
+    </div>
+    
+    <div class="name-input">
+        <input type="text" id="char-name" placeholder="Entre ton nom">
+        <button id="start">Commencer l'aventure ✨</button>
+    </div>
+
+    <script>
+        const characters = ["images/char1.png", "images/char2.png", "images/char3.png"];
+        const characterNames = ["Aria", "Miriam", "Zara"];
+        let currentIndex = 0;
+
+        const mainChar = document.getElementById("main-char");
+        const leftChar = document.getElementById("left-char");
+        const rightChar = document.getElementById("right-char");
+
+        document.getElementById("next").addEventListener("click", () => {
+            currentIndex = (currentIndex + 1) % characters.length;
+            updateCharacters();
+        });
+
+        document.getElementById("prev").addEventListener("click", () => {
+            currentIndex = (currentIndex - 1 + characters.length) % characters.length;
+            updateCharacters();
+        });
+
+        function updateCharacters() {
+            mainChar.src = characters[currentIndex];
+            leftChar.src = characters[(currentIndex - 1 + characters.length) % characters.length];
+            rightChar.src = characters[(currentIndex + 1) % characters.length];
+        }
+
+        document.getElementById("start").addEventListener("click", () => {
+            const selectedChar = characterNames[currentIndex];
+            
+            switch(selectedChar) {
+                case 'Aria':
+                    window.location.href = 'aria-world.html';
+                    break;
+                case 'Miriam':
+                    window.location.href = 'Miriam-world.html';
+                    break;
+                case 'Zara':
+                    window.location.href = 'zara-world.html';
+                    break;
+                default:
+                    alert(`You chose ${selectedChar}! Let's start the game! ✨`);
+            }
+        });
+    </script>
+</body>
+</html>
