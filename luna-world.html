@@ -28,7 +28,6 @@
             position: relative;
         }
 
-        /* Overlay sombre sur le fond */
         body::before {
             content: '';
             position: fixed;
@@ -40,13 +39,11 @@
             z-index: 1;
         }
 
-        /* Tout le contenu au-dessus de l'overlay */
         .content {
             position: relative;
             z-index: 2;
         }
 
-        /* Header */
         .header {
             position: fixed;
             top: 0;
@@ -93,4 +90,873 @@
         }
 
         .sound-toggle:hover {
-            transform
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(164, 141, 111, 0.5);
+        }
+
+        .game-world {
+            margin-top: 80px;
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .world-title {
+            font-size: 3rem;
+            color: #A48D6F;
+            text-shadow: 0 0 20px #A48D6F;
+            margin-bottom: 40px;
+            text-align: center;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #A48D6F; }
+            to { text-shadow: 0 0 30px #A48D6F, 0 0 40px #A48D6F; }
+        }
+
+        .world-zones {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1000px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .zone {
+            background: linear-gradient(135deg, rgba(164, 141, 111, 0.1), rgba(113, 104, 95, 0.1));
+            border: 2px solid rgba(164, 141, 111, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .zone:hover {
+            transform: translateY(-10px);
+            border-color: #A48D6F;
+            box-shadow: 0 15px 35px rgba(164, 141, 111, 0.2);
+        }
+
+        .zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(164, 141, 111, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .zone:hover::before {
+            left: 100%;
+        }
+
+        .zone-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .zone-title {
+            font-size: 1.6rem;
+            color: #A48D6F;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(164, 141, 111, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+
+        .zone-description {
+            color: #ccc;
+            font-size: 0.9rem;
+            font-family: Arial, sans-serif;
+            position: relative;
+            z-index: 1;
+        }
+
+        .miriam-character {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 300px;
+            background-image: url('images/char2.png.PNG');
+            background-size: cover;
+            background-position: center;
+            z-index: 50;
+            filter: drop-shadow(0 0 20px rgba(164, 141, 111, 0.3));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .minigame-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(48, 39, 34, 0.95), rgba(113, 104, 95, 0.95));
+            border: 2px solid #A48D6F;
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            display: none;
+            min-width: 450px;
+            backdrop-filter: blur(20px);
+        }
+
+        .minigame-title {
+            font-size: 2.2rem;
+            color: #A48D6F;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px #A48D6F;
+        }
+
+        .minigame-content {
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+
+        .design-game {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .color-btn {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .cat-game {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .cat-emoji {
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 10px;
+            border-radius: 15px;
+        }
+
+        .cat-emoji:hover {
+            transform: scale(1.2);
+            background: rgba(255, 107, 157, 0.2);
+        }
+
+        .rooftop-game {
+            margin: 20px 0;
+        }
+
+        .mood-btn {
+            padding: 8px 15px;
+            background: rgba(164, 141, 111, 0.2);
+            border: 1px solid #A48D6F;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mood-btn:hover {
+            background: rgba(164, 141, 111, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .close-btn, .action-btn {
+            background: linear-gradient(45deg, #A48D6F, #71685F);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            font-family: 'DimitriFont', Arial, sans-serif;
+            box-shadow: 0 5px 15px rgba(164, 141, 111, 0.3);
+        }
+
+        .close-btn:hover, .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(164, 141, 111, 0.4);
+        }
+
+        .tictactoe-game {
+            margin: 20px auto;
+        }
+
+        .game-mode-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            background: rgba(164, 141, 111, 0.3);
+            border: 2px solid #A48D6F;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'DimitriFont', Arial, sans-serif;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(45deg, #A48D6F, #71685F);
+            box-shadow: 0 0 20px rgba(164, 141, 111, 0.5);
+        }
+
+        .mode-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .tictactoe-board {
+            display: grid;
+            grid-template-columns: repeat(3, 90px);
+            grid-template-rows: repeat(3, 90px);
+            gap: 8px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .tictactoe-cell {
+            width: 90px;
+            height: 90px;
+            background: rgba(164, 141, 111, 0.2);
+            border: 2px solid #A48D6F;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        .tictactoe-cell:hover:not(:disabled) {
+            background: rgba(164, 141, 111, 0.4);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(164, 141, 111, 0.3);
+        }
+
+        .tictactoe-cell:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .tictactoe-cell.x {
+            color: #ff6b9d;
+            text-shadow: 0 0 10px #ff6b9d;
+        }
+
+        .tictactoe-cell.o {
+            color: #4fc3f7;
+            text-shadow: 0 0 10px #4fc3f7;
+        }
+
+        .tictactoe-info {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            color: #A48D6F;
+            text-shadow: 0 0 10px rgba(164, 141, 111, 0.5);
+        }
+
+        .tictactoe-score {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 1rem;
+        }
+
+        .score-item {
+            padding: 10px 15px;
+            background: rgba(164, 141, 111, 0.2);
+            border-radius: 10px;
+            border: 1px solid #A48D6F;
+        }
+
+        .stats {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, rgba(48, 39, 34, 0.9), rgba(113, 104, 95, 0.9));
+            border: 2px solid rgba(164, 141, 111, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 220px;
+            z-index: 60;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats h3 {
+            color: #A48D6F;
+            text-shadow: 0 0 10px rgba(164, 141, 111, 0.5);
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #ccc;
+        }
+
+        .stat-bar {
+            width: 100px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #A48D6F, #71685F);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(164, 141, 111, 0.3);
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #A48D6F;
+            border-radius: 50%;
+            animation: float-particle 8s linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        .score-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #A48D6F, #71685F);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            z-index: 300;
+            box-shadow: 0 10px 30px rgba(164, 141, 111, 0.5);
+            animation: popup 2s ease-out;
+            display: none;
+        }
+
+        @keyframes popup {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <audio id="backgroundMusic" loop autoplay>
+            <source src="music/Victoria%20Monét%20-%20Dive%20(Lyric%20Video).mp3" type="audio/mpeg">
+        </audio>
+
+        <div class="header">
+            <img src="baddielogo.png.PNG" alt="Logo" class="logo" onclick="window.location.href='index.html'" style="cursor: pointer;">
+            <div class="player-info">
+                <span>🌙 Miriam's Urban Loft</span>
+            </div>
+            <button class="sound-toggle" id="soundToggle">🔊</button>
+        </div>
+
+        <div class="particles" id="particles"></div>
+
+        <div class="game-world">
+            <h1 class="world-title">✨ Atelier de Miriam ✨</h1>
+            
+            <div class="world-zones">
+                <div class="zone" onclick="startMinigame('design')">
+                    <div class="zone-icon">🎨</div>
+                    <div class="zone-title">Design Studio</div>
+                    <div class="zone-description">Crée des looks iconiques pour tes clients VIP</div>
+                </div>
+                
+                <div class="zone" onclick="startMinigame('cats')">
+                    <div class="zone-icon">😸</div>
+                    <div class="zone-title">Luxury Cat Lounge</div>
+                    <div class="zone-description">Prends soin de tes félins de luxe</div>
+                </div>
+                
+                <div class="zone" onclick="startMinigame('rooftop')">
+                    <div class="zone-icon">🌃</div>
+                    <div class="zone-title">Rooftop Morpion</div>
+                    <div class="zone-description">Joue au morpion seul ou à 2 sur le rooftop</div>
+                </div>
+                
+                <div class="zone" onclick="startMinigame('atelier')">
+                    <div class="zone-icon">✂️</div>
+                    <div class="zone-title">Haute Couture Atelier</div>
+                    <div class="zone-description">Couds des pièces exclusives</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="miriam-character"></div>
+
+        <div class="stats">
+            <h3>📊 Miriam Stats</h3>
+            <div class="stat-item">
+                <span>Style</span>
+                <div class="stat-bar"><div class="stat-fill" id="style" style="width: 80%;"></div></div>
+            </div>
+            <div class="stat-item">
+                <span>Fame</span>
+                <div class="stat-bar"><div class="stat-fill" id="fame" style="width: 65%;"></div></div>
+            </div>
+            <div class="stat-item">
+                <span>Energy</span>
+                <div class="stat-bar"><div class="stat-fill" id="energy" style="width: 70%;"></div></div>
+            </div>
+            <div class="stat-item">
+                <span>Mood</span>
+                <div class="stat-bar"><div class="stat-fill" id="mood" style="width: 85%;"></div></div>
+            </div>
+        </div>
+
+        <div class="minigame-panel" id="minigamePanel">
+            <h2 class="minigame-title" id="gameTitle">Mini-Game</h2>
+            <div class="minigame-content" id="gameContent"></div>
+            <button class="close-btn" onclick="closeMinigame()">Fermer</button>
+        </div>
+
+        <div class="score-popup" id="scorePopup">+10 Style Points! ✨</div>
+    </div>
+
+    <script>
+        let stats = {
+            style: 80,
+            fame: 65,
+            energy: 70,
+            mood: 85
+        };
+
+        let isMuted = false;
+        const soundToggle = document.getElementById('soundToggle');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        
+        soundToggle.addEventListener('click', () => {
+            if (isMuted) {
+                backgroundMusic.play();
+                soundToggle.textContent = '🔊';
+                isMuted = false;
+            } else {
+                backgroundMusic.pause();
+                soundToggle.textContent = '🔇';
+                isMuted = true;
+            }
+        });
+
+        function createParticles() {
+            const particles = document.getElementById('particles');
+            setInterval(() => {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                particles.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 8000);
+            }, 800);
+        }
+
+        let tictactoeBoard = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameMode = 'solo';
+        let gameActive = true;
+        let tictactoeScore = { X: 0, O: 0, draws: 0 };
+
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function startMinigame(type) {
+            const panel = document.getElementById('minigamePanel');
+            const title = document.getElementById('gameTitle');
+            const content = document.getElementById('gameContent');
+
+            switch(type) {
+                case 'design':
+                    title.textContent = '🎨 DESIGN CHALLENGE';
+                    content.innerHTML = '<p>Choisis les couleurs parfaites pour le look du jour !</p>' +
+                        '<div class="design-game">' +
+                        '<div class="color-btn" style="background: #ff6b9d;" onclick="selectColor(\'pink\')"></div>' +
+                        '<div class="color-btn" style="background: #333;" onclick="selectColor(\'black\')"></div>' +
+                        '<div class="color-btn" style="background: #ffd700;" onclick="selectColor(\'gold\')"></div>' +
+                        '<div class="color-btn" style="background: #9b59b6;" onclick="selectColor(\'purple\')"></div>' +
+                        '<div class="color-btn" style="background: #ffffff;" onclick="selectColor(\'white\')"></div>' +
+                        '<div class="color-btn" style="background: #e74c3c;" onclick="selectColor(\'red\')"></div>' +
+                        '</div>' +
+                        '<p id="designResult">Clique sur 3 couleurs pour créer ton look !</p>';
+                    break;
+
+                case 'cats':
+                    title.textContent = '😸 CAT CARE TIME';
+                    content.innerHTML = '<p>Tes chats de luxe ont besoin d\'attention ! Clique sur eux !</p>' +
+                        '<div class="cat-game">' +
+                        '<div class="cat-emoji" onclick="petCat(\'miriam\')">🐱</div>' +
+                        '<div class="cat-emoji" onclick="petCat(\'shadow\')">🐈‍⬛</div>' +
+                        '<div class="cat-emoji" onclick="petCat(\'diamond\')">😸</div>' +
+                        '</div>' +
+                        '<p id="catResult">Score: <span id="catScore">0</span>/10</p>';
+                    break;
+
+                case 'rooftop':
+                    title.textContent = '🌃 ROOFTOP MORPION';
+                    initTicTacToe();
+                    
+                    let boardHTML = '';
+                    for (let i = 0; i < 9; i++) {
+                        boardHTML += '<button class="tictactoe-cell" onclick="makeMove(' + i + ')" data-cell="' + i + '"></button>';
+                    }
+                    
+                    content.innerHTML = '<div class="tictactoe-game">' +
+                        '<div class="game-mode-selector">' +
+                        '<button class="mode-btn active" id="soloBtn" onclick="changeGameMode(\'solo\')">🤖 Solo (vs IA)</button>' +
+                        '<button class="mode-btn" id="duoBtn" onclick="changeGameMode(\'duo\')">👥 Duo (2 joueurs)</button>' +
+                        '</div>' +
+                        '<div class="tictactoe-info" id="tictactoeInfo">Mode: Solo | Tour de X</div>' +
+                        '<div class="tictactoe-board" id="tictactoeBoard">' + boardHTML + '</div>' +
+                        '<div class="tictactoe-score">' +
+                        '<div class="score-item">X: <span id="scoreX">' + tictactoeScore.X + '</span></div>' +
+                        '<div class="score-item">Égalités: <span id="scoreDraws">' + tictactoeScore.draws + '</span></div>' +
+                        '<div class="score-item">O: <span id="scoreO">' + tictactoeScore.O + '</span></div>' +
+                        '</div>' +
+                        '<button class="action-btn" onclick="resetTicTacToe()">🔄 Nouvelle partie</button>' +
+                        '</div>';
+                    break;
+
+                case 'atelier':
+                    title.textContent = '✂️ COUTURE RUSH';
+                    content.innerHTML = '<p>Couds rapidement avant la deadline ! Clique vite !</p>' +
+                        '<div style="margin: 20px 0;">' +
+                        '<button class="action-btn" id="sewBtn" onclick="startSewing()">Commencer à coudre</button>' +
+                        '</div>' +
+                        '<div>Pièces cousues: <span id="sewCount">0</span>/5</div>' +
+                        '<div>Temps: <span id="timer">10</span>s</div>';
+                    break;
+            }
+
+            panel.style.display = 'block';
+        }
+
+        function initTicTacToe() {
+            tictactoeBoard = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+        }
+
+        function changeGameMode(mode) {
+            gameMode = mode;
+            resetTicTacToe();
+            
+            document.getElementById('soloBtn').classList.remove('active');
+            document.getElementById('duoBtn').classList.remove('active');
+            
+            if (mode === 'solo') {
+                document.getElementById('soloBtn').classList.add('active');
+            } else {
+                document.getElementById('duoBtn').classList.add('active');
+            }
+            
+            updateInfo();
+        }
+
+        function updateInfo() {
+            const info = document.getElementById('tictactoeInfo');
+            const modeText = gameMode === 'solo' ? 'Solo (vs IA)' : '2 Joueurs';
+            if (gameActive) {
+                info.textContent = 'Mode: ' + modeText + ' | Tour de ' + currentPlayer;
+            }
+        }
+
+        function makeMove(index) {
+            if (!gameActive || tictactoeBoard[index] !== '') return;
+
+            tictactoeBoard[index] = currentPlayer;
+            updateCell(index);
+
+            if (checkWinner()) {
+                endGame(currentPlayer + ' a gagné ! 🎉');
+                tictactoeScore[currentPlayer]++;
+                updateScore();
+                updateStat('fame', 15);
+                showScorePopup('+15 Fame Points! ' + currentPlayer + ' gagne! 🎉');
+                return;
+            }
+
+            if (tictactoeBoard.every(cell => cell !== '')) {
+                endGame('Égalité ! 🤝');
+                tictactoeScore.draws++;
+                updateScore();
+                updateStat('mood', 5);
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateInfo();
+
+            if (gameMode === 'solo' && currentPlayer === 'O' && gameActive) {
+                setTimeout(() => {
+                    aiMove();
+                }, 500);
+            }
+        }
+
+        function updateCell(index) {
+            const cells = document.querySelectorAll('.tictactoe-cell');
+            cells[index].textContent = currentPlayer;
+            cells[index].classList.add(currentPlayer.toLowerCase());
+            cells[index].disabled = true;
+        }
+
+        function checkWinner() {
+            return winPatterns.some(pattern => {
+                const a = pattern[0], b = pattern[1], c = pattern[2];
+                return tictactoeBoard[a] !== '' &&
+                       tictactoeBoard[a] === tictactoeBoard[b] &&
+                       tictactoeBoard[a] === tictactoeBoard[c];
+            });
+        }
+
+        function endGame(message) {
+            gameActive = false;
+            document.getElementById('tictactoeInfo').textContent = message;
+            document.querySelectorAll('.tictactoe-cell').forEach(cell => cell.disabled = true);
+        }
+
+        function aiMove() {
+            if (!gameActive) return;
+
+            let move = findBestMove('O');
+            if (move === -1) move = findBestMove('X');
+            if (move === -1) move = getRandomMove();
+
+            if (move !== -1) {
+                makeMove(move);
+            }
+        }
+
+        function findBestMove(player) {
+            for (let i = 0; i < winPatterns.length; i++) {
+                const pattern = winPatterns[i];
+                const a = pattern[0], b = pattern[1], c = pattern[2];
+                const cells = [tictactoeBoard[a], tictactoeBoard[b], tictactoeBoard[c]];
+                
+                let playerCount = 0;
+                let emptyCount = 0;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j] === player) playerCount++;
+                    if (cells[j] === '') emptyCount++;
+                }
+                
+                if (playerCount === 2 && emptyCount === 1) {
+                    if (tictactoeBoard[a] === '') return a;
+                    if (tictactoeBoard[b] === '') return b;
+                    if (tictactoeBoard[c] === '') return c;
+                }
+            }
+            return -1;
+        }
+
+        function getRandomMove() {
+            const emptyCells = [];
+            for (let i = 0; i < tictactoeBoard.length; i++) {
+                if (tictactoeBoard[i] === '') {
+                    emptyCells.push(i);
+                }
+            }
+            
+            return emptyCells.length > 0 ? 
+                emptyCells[Math.floor(Math.random() * emptyCells.length)] : -1;
+        }
+
+        function resetTicTacToe() {
+            initTicTacToe();
+            
+            const cells = document.querySelectorAll('.tictactoe-cell');
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.disabled = false;
+                cell.classList.remove('x', 'o');
+            });
+            
+            updateInfo();
+        }
+
+        function updateScore() {
+            document.getElementById('scoreX').textContent = tictactoeScore.X;
+            document.getElementById('scoreO').textContent = tictactoeScore.O;
+            document.getElementById('scoreDraws').textContent = tictactoeScore.draws;
+        }
+
+        let designColors = [];
+        let catScore = 0;
+        let sewingCount = 0;
+        let isSwing = false;
+
+        function selectColor(color) {
+            designColors.push(color);
+            if (designColors.length >= 3) {
+                const result = document.getElementById('designResult');
+                result.innerHTML = '✨ Look créé ! Tu es une vraie designer ! +15 Style !';
+                updateStat('style', 15);
+                showScorePopup('+15 Style Points! 🎨');
+                designColors = [];
+            }
+        }
+
+        function petCat(catName) {
+            catScore++;
+            document.getElementById('catScore').textContent = catScore;
+            if (catScore >= 10) {
+                document.getElementById('catResult').innerHTML = '😸 Tes chats sont heureux ! +20 Mood !';
+                updateStat('mood', 20);
+                showScorePopup('+20 Mood Points! 😸');
+                catScore = 0;
+            }
+        }
+
+        function startSewing() {
+            if (isSwing) return;
+            isSwing = true;
+            sewingCount = 0;
+            let timeLeft = 10;
+            
+            const sewBtn = document.getElementById('sewBtn');
+            const timer = document.getElementById('timer');
+            const counter = document.getElementById('sewCount');
+            
+            sewBtn.textContent = 'COUD !';
+            sewBtn.onclick = () => {
+                sewingCount++;
+                counter.textContent = sewingCount;
+                if (sewingCount >= 5) {
+                    sewBtn.innerHTML = '✂️ Défi réussi ! +25 Fame !';
+                    updateStat('fame', 25);
+                    showScorePopup('+25 Fame Points! ✂️');
+                    isSwing = false;
+                }
+            };
+            
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timer.textContent = timeLeft;
+                if (timeLeft <= 0 || sewingCount >= 5) {
+                    clearInterval(countdown);
+                    isSwing = false;
+                    sewBtn.textContent = 'Fini !';
+                }
+            }, 1000);
+        }
+
+        function updateStat(statName, value) {
+            stats[statName] = Math.min(100, stats[statName] + value);
+            document.getElementById(statName).style.width = stats[statName] + '%';
+        }
+
+        function showScorePopup(text) {
+            const popup = document.getElementById('scorePopup');
+            popup.textContent = text;
+            popup.style.display = 'block';
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 2000);
+        }
+
+        function closeMinigame() {
+            document.getElementById('minigamePanel').style.display = 'none';
+        }
+
+        createParticles();
+        
+        window.addEventListener('load', () => {
+            backgroundMusic.play().then(() => {
+                console.log('Autoplay réussi !');
+            }).catch(() => {
+                console.log('Autoplay bloqué, attente du premier clic');
+                document.addEventListener('click', () => {
+                    if (!isMuted && backgroundMusic.paused) {
+                        backgroundMusic.play();
+                    }
+                }, { once: true });
+            });
+        });
+    </script>
+</body>
+</html>
