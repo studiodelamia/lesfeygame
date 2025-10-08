@@ -21,7 +21,7 @@
 
         body {
             font-family: 'DimitriFont', Arial, sans-serif;
-            background: #0a0a0a url('vmonet.gif') center/cover no-repeat;
+            background: #0a0a0a url('lagif.gif') center/cover no-repeat;
             min-height: 100vh;
             color: white;
             overflow-x: hidden;
@@ -435,16 +435,16 @@
 </head>
 <body>
     <div class="content">
-        <!-- Audio avec autoplay pour Safari -->
+        <!-- Audio avec nom encodé pour Chrome -->
         <audio id="backgroundMusic" loop autoplay>
-            <source src="music/Victoria Monet - Dive (Lyric Video).mp3" type="audio/mpeg">
+            <source src="music/Victoria%20Monét%20-%20Dive%20(Lyric%20Video).mp3" type="audio/mpeg">
         </audio>
 
         <!-- Header -->
         <div class="header">
-            <img src="baddielogo.png.PNG" alt="Logo" class="logo">
+            <img src="baddielogo.png.PNG" alt="Logo" class="logo" onclick="window.location.href='index.html'" style="cursor: pointer;">
             <div class="player-info">
-                <span>🌙 Luna's Urban Loft</span>
+                <span>🌙 Miriam's Urban Loft</span>
             </div>
             <button class="sound-toggle" id="soundToggle">🔊</button>
         </div>
@@ -454,7 +454,7 @@
 
         <!-- Monde -->
         <div class="game-world">
-            <h1 class="world-title">✨ LUNA'S CREATIVE EMPIRE ✨</h1>
+            <h1 class="world-title">✨ Atelier de Miriam ✨</h1>
             
             <div class="world-zones">
                 <div class="zone" onclick="startMinigame('design')">
@@ -523,7 +523,7 @@
     </div>
 
     <script>
-        // Stats de Luna
+        // Stats de Miriam
         let stats = {
             style: 80,
             fame: 65,
