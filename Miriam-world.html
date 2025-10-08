@@ -219,6 +219,7 @@
             z-index: 200;
             display: none;
             min-width: 450px;
+            max-width: 90vw;
             backdrop-filter: blur(20px);
         }
 
@@ -232,6 +233,49 @@
         .minigame-content {
             margin-bottom: 20px;
             color: #ccc;
+        }
+
+        /* Canvas de dessin */
+        .drawing-canvas {
+            border: 3px solid #A48D6F;
+            border-radius: 15px;
+            background: white;
+            cursor: crosshair;
+            margin: 15px auto;
+            display: block;
+            box-shadow: 0 0 20px rgba(164, 141, 111, 0.3);
+        }
+
+        .drawing-tools {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #A48D6F;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .color-picker:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(164, 141, 111, 0.5);
+        }
+
+        .brush-size {
+            padding: 8px 15px;
+            background: rgba(164, 141, 111, 0.3);
+            border: 2px solid #A48D6F;
+            border-radius: 10px;
+            color: white;
+            font-family: 'DimitriFont', Arial, sans-serif;
         }
 
         .design-game {
@@ -539,7 +583,7 @@
                 <div class="zone" onclick="startMinigame('design')">
                     <div class="zone-icon">🎨</div>
                     <div class="zone-title">Design Studio</div>
-                    <div class="zone-description">Crée des looks iconiques pour tes clients VIP</div>
+                    <div class="zone-description">Dessine tes créations sur la toile</div>
                 </div>
                 
                 <div class="zone" onclick="startMinigame('cats')">
@@ -632,6 +676,83 @@
             }, 800);
         }
 
+        // Variables Canvas de dessin
+        let canvas, ctx;
+        let isDrawing = false;
+        let currentColor = '#ff6b9d';
+        let brushSize = 3;
+
+        function initCanvas() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Support tactile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                ctx.beginPath();
+            }
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function changeColor(color) {
+            currentColor = color;
+            ctx.strokeStyle = color;
+        }
+
+        function changeBrushSize(size) {
+            brushSize = size;
+            ctx.lineWidth = size;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveDrawing() {
+            updateStat('style', 20);
+            showScorePopup('+20 Style Points! Dessin sauvegardé! 🎨');
+        }
+
         let tictactoeBoard = ['', '', '', '', '', '', '', '', ''];
         let currentPlayer = 'X';
         let gameMode = 'solo';
@@ -651,17 +772,19 @@
 
             switch(type) {
                 case 'design':
-                    title.textContent = '🎨 DESIGN CHALLENGE';
-                    content.innerHTML = '<p>Choisis les couleurs parfaites pour le look du jour !</p>' +
-                        '<div class="design-game">' +
-                        '<div class="color-btn" style="background: #ff6b9d;" onclick="selectColor(\'pink\')"></div>' +
-                        '<div class="color-btn" style="background: #333;" onclick="selectColor(\'black\')"></div>' +
-                        '<div class="color-btn" style="background: #ffd700;" onclick="selectColor(\'gold\')"></div>' +
-                        '<div class="color-btn" style="background: #9b59b6;" onclick="selectColor(\'purple\')"></div>' +
-                        '<div class="color-btn" style="background: #ffffff;" onclick="selectColor(\'white\')"></div>' +
-                        '<div class="color-btn" style="background: #e74c3c;" onclick="selectColor(\'red\')"></div>' +
+                    title.textContent = '🎨 DESIGN STUDIO';
+                    content.innerHTML = '<p>Dessine ta création sur la toile !</p>' +
+                        '<canvas id="drawingCanvas" class="drawing-canvas" width="400" height="300"></canvas>' +
+                        '<div class="drawing-tools">' +
+                        '<input type="color" class="color-picker" value="#ff6b9d" onchange="changeColor(this.value)">' +
+                        '<label style="color: #A48D6F;">Taille: </label>' +
+                        '<input type="range" class="brush-size" min="1" max="20" value="3" onchange="changeBrushSize(this.value)">' +
+                        '<button class="action-btn" onclick="clearCanvas()">🗑️ Effacer</button>' +
+                        '<button class="action-btn" onclick="saveDrawing()">💾 Sauvegarder</button>' +
                         '</div>' +
-                        '<p id="designResult">Clique sur 3 couleurs pour créer ton look !</p>';
+                        '<p style="font-size: 0.9rem; margin-top: 10px;">Utilise ta souris ou ton doigt pour dessiner !</p>';
+                    
+                    setTimeout(initCanvas, 100);
                     break;
 
                 case 'cats':
@@ -865,21 +988,9 @@
             document.getElementById('scoreDraws').textContent = tictactoeScore.draws;
         }
 
-        let designColors = [];
         let catScore = 0;
         let sewingCount = 0;
         let isSwing = false;
-
-        function selectColor(color) {
-            designColors.push(color);
-            if (designColors.length >= 3) {
-                const result = document.getElementById('designResult');
-                result.innerHTML = '✨ Look créé ! Tu es une vraie designer ! +15 Style !';
-                updateStat('style', 15);
-                showScorePopup('+15 Style Points! 🎨');
-                designColors = [];
-            }
-        }
 
         function petCat(catName) {
             catScore++;
