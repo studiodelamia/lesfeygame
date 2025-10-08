@@ -1,4 +1,5 @@
 const characters = ["images/char1.png", "images/char2.png", "images/char3.png"];
+const characterNames = ["Aria", "Miriam", "Zara"]; // Noms correspondants
 let currentIndex = 0;
 
 const mainChar = document.getElementById("main-char");
@@ -22,6 +23,20 @@ function updateCharacters() {
 }
 
 document.getElementById("start").addEventListener("click", () => {
-    const name = document.getElementById("char-name").value || "Player";
-    alert(`You chose ${name}! Let's start the game! ✨`);
+    const selectedChar = characterNames[currentIndex];
+    
+    // Redirection selon le personnage sélectionné
+    switch(selectedChar) {
+        case 'Aria':
+            window.location.href = 'aria-world.html';
+            break;
+        case 'Miriam':
+            window.location.href = 'Miriam-world.html';
+            break;
+        case 'Zara':
+            window.location.href = 'zara-world.html';
+            break;
+        default:
+            alert(`You chose ${selectedChar}! Let's start the game! ✨`);
+    }
 });
