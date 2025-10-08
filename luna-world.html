@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luna's Urban World</title>
+    <title>Miriam's Urban World</title>
     <style>
         @font-face {
             font-family: 'DimitriFont';
@@ -191,8 +191,8 @@
             z-index: 1;
         }
 
-        /* Personnage Luna */
-        .luna-character {
+        /* Personnage Miriam */
+        .miriam-character {
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -327,7 +327,7 @@
             box-shadow: 0 8px 20px rgba(164, 141, 111, 0.4);
         }
 
-        /* Stats Luna */
+        /* Stats Miriam */
         .stats {
             position: fixed;
             bottom: 20px;
@@ -483,12 +483,12 @@
             </div>
         </div>
 
-        <!-- Personnage Luna -->
-        <div class="luna-character"></div>
+        <!-- Personnage Miriam -->
+        <div class="miriam-character"></div>
 
         <!-- Stats -->
         <div class="stats">
-            <h3>📊 Luna Stats</h3>
+            <h3>📊 Miriam Stats</h3>
             <div class="stat-item">
                 <span>Style</span>
                 <div class="stat-bar"><div class="stat-fill" id="style" style="width: 80%;"></div></div>
@@ -592,7 +592,7 @@
                     content.innerHTML = `
                         <p>Tes chats de luxe ont besoin d'attention ! Clique sur eux !</p>
                         <div class="cat-game">
-                            <div class="cat-emoji" onclick="petCat('luna')">🐱</div>
+                            <div class="cat-emoji" onclick="petCat('miriam')">🐱</div>
                             <div class="cat-emoji" onclick="petCat('shadow')">🐈‍⬛</div>
                             <div class="cat-emoji" onclick="petCat('diamond')">😸</div>
                         </div>
@@ -632,119 +632,4 @@
             panel.style.display = 'block';
         }
 
-        // Logique mini-jeux
-        let designColors = [];
-        let catScore = 0;
-        let sewingCount = 0;
-        let isSwing = false;
-
-        function selectColor(color) {
-            designColors.push(color);
-            if (designColors.length >= 3) {
-                const result = document.getElementById('designResult');
-                result.innerHTML = `✨ Look créé ! Tu es une vraie designer ! +15 Style !`;
-                updateStat('style', 15);
-                showScorePopup('+15 Style Points! 🎨');
-                designColors = [];
-            }
-        }
-
-        function petCat(catName) {
-            catScore++;
-            document.getElementById('catScore').textContent = catScore;
-            if (catScore >= 10) {
-                document.getElementById('catResult').innerHTML = '😸 Tes chats sont heureux ! +20 Mood !';
-                updateStat('mood', 20);
-                showScorePopup('+20 Mood Points! 😸');
-                catScore = 0;
-            }
-        }
-
-        function chooseMood(mood) {
-            const messages = {
-                glamour: '✨ Tu rayonnes ! +10 Fame !',
-                edgy: '🔥 Attitude de boss ! +15 Style !',
-                dreamy: '💫 Inspiration magique ! +10 Energy !',
-                boss: '👑 Queen energy ! +20 Fame !'
-            };
-            
-            document.getElementById('inspirationResult').innerHTML = messages[mood];
-            const statBonus = mood === 'boss' ? 20 : mood === 'edgy' ? 15 : 10;
-            const statType = mood === 'glamour' || mood === 'boss' ? 'fame' : 
-                           mood === 'edgy' ? 'style' : 'energy';
-            
-            updateStat(statType, statBonus);
-            showScorePopup(`+${statBonus} ${statType.charAt(0).toUpperCase() + statType.slice(1)} Points! ✨`);
-        }
-
-        function startSewing() {
-            if (isSwing) return;
-            isSwing = true;
-            sewingCount = 0;
-            let timeLeft = 10;
-            
-            const sewBtn = document.getElementById('sewBtn');
-            const timer = document.getElementById('timer');
-            const counter = document.getElementById('sewCount');
-            
-            sewBtn.textContent = 'COUD !';
-            sewBtn.onclick = () => {
-                sewingCount++;
-                counter.textContent = sewingCount;
-                if (sewingCount >= 5) {
-                    sewBtn.innerHTML = '✂️ Défi réussi ! +25 Fame !';
-                    updateStat('fame', 25);
-                    showScorePopup('+25 Fame Points! ✂️');
-                    isSwing = false;
-                }
-            };
-            
-            const countdown = setInterval(() => {
-                timeLeft--;
-                timer.textContent = timeLeft;
-                if (timeLeft <= 0 || sewingCount >= 5) {
-                    clearInterval(countdown);
-                    isSwing = false;
-                    sewBtn.textContent = 'Fini !';
-                }
-            }, 1000);
-        }
-
-        function updateStat(statName, value) {
-            stats[statName] = Math.min(100, stats[statName] + value);
-            document.getElementById(statName).style.width = stats[statName] + '%';
-        }
-
-        function showScorePopup(text) {
-            const popup = document.getElementById('scorePopup');
-            popup.textContent = text;
-            popup.style.display = 'block';
-            setTimeout(() => {
-                popup.style.display = 'none';
-            }, 2000);
-        }
-
-        function closeMinigame() {
-            document.getElementById('minigamePanel').style.display = 'none';
-        }
-
-        createParticles();
-        
-        // Solution hybride pour Safari + Chrome
-        window.addEventListener('load', () => {
-            // Essaie autoplay d'abord (Safari)
-            backgroundMusic.play().then(() => {
-                console.log('Autoplay réussi !');
-            }).catch(() => {
-                // Si échec, démarre au premier clic (Chrome)
-                console.log('Autoplay bloqué, attente du premier clic');
-                document.addEventListener('click', () => {
-                    if (!isMuted && backgroundMusic.paused) {
-                        backgroundMusic.play();
-                    }
-                }, { once: true });
-            });
-        });
-    </script>
-</body>
-</html>
+        //
