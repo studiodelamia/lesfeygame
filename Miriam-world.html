@@ -62,6 +62,7 @@
         .logo {
             height: 40px;
             filter: drop-shadow(0 0 10px #A48D6F);
+            cursor: pointer;
         }
 
         .player-info {
@@ -218,8 +219,10 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
             z-index: 200;
             display: none;
-            min-width: 450px;
+            min-width: 500px;
             max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
             backdrop-filter: blur(20px);
         }
 
@@ -236,7 +239,7 @@
         }
 
         /* Canvas de dessin */
-        .drawing-canvas {
+        #drawingCanvas {
             border: 3px solid #A48D6F;
             border-radius: 15px;
             background: white;
@@ -248,55 +251,69 @@
 
         .drawing-tools {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
-            margin: 15px 0;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(164, 141, 111, 0.1);
+            border-radius: 15px;
         }
 
-        .color-picker {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #A48D6F;
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tool-label {
+            color: #A48D6F;
+            font-size: 1rem;
+            text-shadow: 0 0 5px rgba(164, 141, 111, 0.3);
+        }
+
+        #colorPicker {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #A48D6F;
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .color-picker:hover {
+        #colorPicker:hover {
             transform: scale(1.1);
             box-shadow: 0 0 15px rgba(164, 141, 111, 0.5);
         }
 
-        .brush-size {
-            padding: 8px 15px;
+        #brushSize {
+            width: 150px;
+            height: 8px;
+            border-radius: 5px;
             background: rgba(164, 141, 111, 0.3);
-            border: 2px solid #A48D6F;
-            border-radius: 10px;
-            color: white;
-            font-family: 'DimitriFont', Arial, sans-serif;
-        }
-
-        .design-game {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .color-btn {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #333;
-            border-radius: 50%;
+            outline: none;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        .color-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        #brushSize::-webkit-slider-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #A48D6F, #71685F);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(164, 141, 111, 0.5);
+        }
+
+        #brushSize::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #A48D6F, #71685F);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(164, 141, 111, 0.5);
         }
 
         .cat-game {
@@ -316,25 +333,6 @@
         .cat-emoji:hover {
             transform: scale(1.2);
             background: rgba(255, 107, 157, 0.2);
-        }
-
-        .rooftop-game {
-            margin: 20px 0;
-        }
-
-        .mood-btn {
-            padding: 8px 15px;
-            background: rgba(164, 141, 111, 0.2);
-            border: 1px solid #A48D6F;
-            border-radius: 20px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .mood-btn:hover {
-            background: rgba(164, 141, 111, 0.4);
-            transform: translateY(-2px);
         }
 
         .close-btn, .action-btn {
@@ -567,7 +565,7 @@
         </audio>
 
         <div class="header">
-            <img src="baddielogo.png.PNG" alt="Logo" class="logo" onclick="window.location.href='index.html'" style="cursor: pointer;">
+            <img src="baddielogo.png.PNG" alt="Logo" class="logo" onclick="window.location.href='index.html'">
             <div class="player-info">
                 <span>🌙 Miriam's Urban Loft</span>
             </div>
@@ -595,7 +593,7 @@
                 <div class="zone" onclick="startMinigame('rooftop')">
                     <div class="zone-icon">🌃</div>
                     <div class="zone-title">Rooftop Morpion</div>
-                    <div class="zone-description">Joue au morpion seul ou à 2 sur le rooftop</div>
+                    <div class="zone-description">Joue au morpion seul ou à 2</div>
                 </div>
                 
                 <div class="zone" onclick="startMinigame('atelier')">
@@ -676,16 +674,17 @@
             }, 800);
         }
 
-        // Variables Canvas de dessin
+        // Variables Canvas
         let canvas, ctx;
         let isDrawing = false;
         let currentColor = '#ff6b9d';
-        let brushSize = 3;
+        let brushSize = 5;
 
         function initCanvas() {
             canvas = document.getElementById('drawingCanvas');
-            ctx = canvas.getContext('2d');
+            if (!canvas) return;
             
+            ctx = canvas.getContext('2d');
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = currentColor;
@@ -696,9 +695,8 @@
             canvas.addEventListener('mouseup', stopDrawing);
             canvas.addEventListener('mouseout', stopDrawing);
             
-            // Support tactile
-            canvas.addEventListener('touchstart', handleTouch);
-            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
             canvas.addEventListener('touchend', stopDrawing);
         }
 
@@ -724,14 +722,22 @@
             }
         }
 
-        function handleTouch(e) {
+        function handleTouchStart(e) {
             e.preventDefault();
             const touch = e.touches[0];
-            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            canvas.dispatchEvent(mouseEvent);
+            const rect = canvas.getBoundingClientRect();
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+        }
+
+        function handleTouchMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            ctx.stroke();
         }
 
         function changeColor(color) {
@@ -742,6 +748,7 @@
         function changeBrushSize(size) {
             brushSize = size;
             ctx.lineWidth = size;
+            document.getElementById('brushSizeValue').textContent = size + 'px';
         }
 
         function clearCanvas() {
@@ -772,28 +779,36 @@
 
             switch(type) {
                 case 'design':
-                    title.textContent = '🎨 DESIGN STUDIO';
-                    content.innerHTML = '<p>Dessine ta création sur la toile !</p>' +
-                        '<canvas id="drawingCanvas" class="drawing-canvas" width="400" height="300"></canvas>' +
+                    title.textContent = '🎨 DESIGN STUDIO - Toile de Dessin';
+                    content.innerHTML = 
+                        '<p style="margin-bottom: 15px;">Crée ton design sur la toile blanche ! Utilise ta souris ou ton doigt pour dessiner.</p>' +
+                        '<canvas id="drawingCanvas" width="450" height="350"></canvas>' +
                         '<div class="drawing-tools">' +
-                        '<input type="color" class="color-picker" value="#ff6b9d" onchange="changeColor(this.value)">' +
-                        '<label style="color: #A48D6F;">Taille: </label>' +
-                        '<input type="range" class="brush-size" min="1" max="20" value="3" onchange="changeBrushSize(this.value)">' +
-                        '<button class="action-btn" onclick="clearCanvas()">🗑️ Effacer</button>' +
-                        '<button class="action-btn" onclick="saveDrawing()">💾 Sauvegarder</button>' +
+                            '<div class="tool-group">' +
+                                '<span class="tool-label">🎨 Couleur:</span>' +
+                                '<input type="color" id="colorPicker" value="#ff6b9d" onchange="changeColor(this.value)">' +
+                            '</div>' +
+                            '<div class="tool-group">' +
+                                '<span class="tool-label">✏️ Taille: <span id="brushSizeValue">5px</span></span>' +
+                                '<input type="range" id="brushSize" min="1" max="30" value="5" oninput="changeBrushSize(this.value)">' +
+                            '</div>' +
                         '</div>' +
-                        '<p style="font-size: 0.9rem; margin-top: 10px;">Utilise ta souris ou ton doigt pour dessiner !</p>';
+                        '<div style="margin-top: 15px;">' +
+                            '<button class="action-btn" onclick="clearCanvas()">🗑️ Effacer tout</button>' +
+                            '<button class="action-btn" onclick="saveDrawing()">💾 Sauvegarder (+20 Style)</button>' +
+                        '</div>';
                     
                     setTimeout(initCanvas, 100);
                     break;
 
                 case 'cats':
                     title.textContent = '😸 CAT CARE TIME';
-                    content.innerHTML = '<p>Tes chats de luxe ont besoin d\'attention ! Clique sur eux !</p>' +
+                    content.innerHTML = 
+                        '<p>Tes chats de luxe ont besoin d\'attention ! Clique sur eux !</p>' +
                         '<div class="cat-game">' +
-                        '<div class="cat-emoji" onclick="petCat(\'miriam\')">🐱</div>' +
-                        '<div class="cat-emoji" onclick="petCat(\'shadow\')">🐈‍⬛</div>' +
-                        '<div class="cat-emoji" onclick="petCat(\'diamond\')">😸</div>' +
+                            '<div class="cat-emoji" onclick="petCat()">🐱</div>' +
+                            '<div class="cat-emoji" onclick="petCat()">🐈‍⬛</div>' +
+                            '<div class="cat-emoji" onclick="petCat()">😸</div>' +
                         '</div>' +
                         '<p id="catResult">Score: <span id="catScore">0</span>/10</p>';
                     break;
@@ -804,30 +819,32 @@
                     
                     let boardHTML = '';
                     for (let i = 0; i < 9; i++) {
-                        boardHTML += '<button class="tictactoe-cell" onclick="makeMove(' + i + ')" data-cell="' + i + '"></button>';
+                        boardHTML += '<button class="tictactoe-cell" onclick="makeMove(' + i + ')"></button>';
                     }
                     
-                    content.innerHTML = '<div class="tictactoe-game">' +
-                        '<div class="game-mode-selector">' +
-                        '<button class="mode-btn active" id="soloBtn" onclick="changeGameMode(\'solo\')">🤖 Solo (vs IA)</button>' +
-                        '<button class="mode-btn" id="duoBtn" onclick="changeGameMode(\'duo\')">👥 Duo (2 joueurs)</button>' +
-                        '</div>' +
-                        '<div class="tictactoe-info" id="tictactoeInfo">Mode: Solo | Tour de X</div>' +
-                        '<div class="tictactoe-board" id="tictactoeBoard">' + boardHTML + '</div>' +
-                        '<div class="tictactoe-score">' +
-                        '<div class="score-item">X: <span id="scoreX">' + tictactoeScore.X + '</span></div>' +
-                        '<div class="score-item">Égalités: <span id="scoreDraws">' + tictactoeScore.draws + '</span></div>' +
-                        '<div class="score-item">O: <span id="scoreO">' + tictactoeScore.O + '</span></div>' +
-                        '</div>' +
-                        '<button class="action-btn" onclick="resetTicTacToe()">🔄 Nouvelle partie</button>' +
+                    content.innerHTML = 
+                        '<div class="tictactoe-game">' +
+                            '<div class="game-mode-selector">' +
+                                '<button class="mode-btn active" id="soloBtn" onclick="changeGameMode(\'solo\')">🤖 Solo (vs IA)</button>' +
+                                '<button class="mode-btn" id="duoBtn" onclick="changeGameMode(\'duo\')">👥 Duo</button>' +
+                            '</div>' +
+                            '<div class="tictactoe-info" id="tictactoeInfo">Mode: Solo | Tour de X</div>' +
+                            '<div class="tictactoe-board">' + boardHTML + '</div>' +
+                            '<div class="tictactoe-score">' +
+                                '<div class="score-item">X: <span id="scoreX">0</span></div>' +
+                                '<div class="score-item">Égalités: <span id="scoreDraws">0</span></div>' +
+                                '<div class="score-item">O: <span id="scoreO">0</span></div>' +
+                            '</div>' +
+                            '<button class="action-btn" onclick="resetTicTacToe()">🔄 Nouvelle partie</button>' +
                         '</div>';
                     break;
 
                 case 'atelier':
                     title.textContent = '✂️ COUTURE RUSH';
-                    content.innerHTML = '<p>Couds rapidement avant la deadline ! Clique vite !</p>' +
+                    content.innerHTML = 
+                        '<p>Couds rapidement avant la deadline !</p>' +
                         '<div style="margin: 20px 0;">' +
-                        '<button class="action-btn" id="sewBtn" onclick="startSewing()">Commencer à coudre</button>' +
+                            '<button class="action-btn" id="sewBtn" onclick="startSewing()">Commencer à coudre</button>' +
                         '</div>' +
                         '<div>Pièces cousues: <span id="sewCount">0</span>/5</div>' +
                         '<div>Temps: <span id="timer">10</span>s</div>';
@@ -894,9 +911,7 @@
             updateInfo();
 
             if (gameMode === 'solo' && currentPlayer === 'O' && gameActive) {
-                setTimeout(() => {
-                    aiMove();
-                }, 500);
+                setTimeout(aiMove, 500);
             }
         }
 
@@ -990,9 +1005,9 @@
 
         let catScore = 0;
         let sewingCount = 0;
-        let isSwing = false;
+        let isSewing = false;
 
-        function petCat(catName) {
+        function petCat() {
             catScore++;
             document.getElementById('catScore').textContent = catScore;
             if (catScore >= 10) {
@@ -1004,8 +1019,8 @@
         }
 
         function startSewing() {
-            if (isSwing) return;
-            isSwing = true;
+            if (isSewing) return;
+            isSewing = true;
             sewingCount = 0;
             let timeLeft = 10;
             
@@ -1021,7 +1036,7 @@
                     sewBtn.innerHTML = '✂️ Défi réussi ! +25 Fame !';
                     updateStat('fame', 25);
                     showScorePopup('+25 Fame Points! ✂️');
-                    isSwing = false;
+                    isSewing = false;
                 }
             };
             
@@ -1030,7 +1045,7 @@
                 timer.textContent = timeLeft;
                 if (timeLeft <= 0 || sewingCount >= 5) {
                     clearInterval(countdown);
-                    isSwing = false;
+                    isSewing = false;
                     sewBtn.textContent = 'Fini !';
                 }
             }, 1000);
@@ -1057,10 +1072,7 @@
         createParticles();
         
         window.addEventListener('load', () => {
-            backgroundMusic.play().then(() => {
-                console.log('Autoplay réussi !');
-            }).catch(() => {
-                console.log('Autoplay bloqué, attente du premier clic');
+            backgroundMusic.play().catch(() => {
                 document.addEventListener('click', () => {
                     if (!isMuted && backgroundMusic.paused) {
                         backgroundMusic.play();
