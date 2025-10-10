@@ -238,7 +238,104 @@
             color: #ccc;
         }
 
-        /* Canvas de dessin */
+        /* Input prénom stylé */
+        .name-input-container {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(164, 141, 111, 0.1);
+            border-radius: 15px;
+        }
+
+        .name-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 20px;
+            border: 2px solid #A48D6F;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 1rem;
+            font-family: 'DimitriFont', Arial, sans-serif;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .name-input:focus {
+            border-color: #A48D6F;
+            box-shadow: 0 0 15px rgba(164, 141, 111, 0.5);
+            transform: scale(1.02);
+        }
+
+        .name-input::placeholder {
+            color: #999;
+        }
+
+        /* Galerie de dessins */
+        .drawings-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+        }
+
+        .drawing-item {
+            position: relative;
+            border: 2px solid #A48D6F;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .drawing-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(164, 141, 111, 0.5);
+        }
+
+        .drawing-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .drawing-item .drawing-author {
+            background: rgba(164, 141, 111, 0.95);
+            color: white;
+            padding: 5px;
+            font-size: 0.8rem;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .drawing-item .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drawing-item:hover .delete-btn {
+            display: flex;
+        }
+
         #drawingCanvas {
             border: 3px solid #A48D6F;
             border-radius: 15px;
@@ -674,11 +771,72 @@
             }, 800);
         }
 
-        // Variables Canvas
+        // Variables Canvas et stockage
         let canvas, ctx;
         let isDrawing = false;
         let currentColor = '#ff6b9d';
         let brushSize = 5;
+        let currentUserName = localStorage.getItem('currentUserName') || '';
+
+        // Fonctions de stockage des dessins
+        function saveDrawingToGallery() {
+            const nameInput = document.getElementById('artistName');
+            const userName = nameInput ? nameInput.value.trim() : currentUserName;
+            
+            if (!userName) {
+                alert('Entre ton prénom avant de sauvegarder ! 💅');
+                return;
+            }
+
+            currentUserName = userName;
+            localStorage.setItem('currentUserName', userName);
+
+            const imageData = canvas.toDataURL('image/png');
+            const drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
+            
+            const newDrawing = {
+                id: Date.now(),
+                author: userName,
+                image: imageData,
+                date: new Date().toLocaleDateString('fr-FR')
+            };
+
+            drawings.push(newDrawing);
+            localStorage.setItem('drawingsGallery', JSON.stringify(drawings));
+
+            updateStat('style', 20);
+            showScorePopup('+20 Style Points! Dessin de ' + userName + ' sauvegardé! 🎨');
+            loadDrawingsGallery();
+        }
+
+        function loadDrawingsGallery() {
+            const galleryContainer = document.getElementById('drawingsGallery');
+            if (!galleryContainer) return;
+
+            const drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
+            
+            if (drawings.length === 0) {
+                galleryContainer.innerHTML = '<p style="text-align: center; color: #ccc; padding: 20px;">Aucun dessin sauvegardé encore... Sois la première ! ✨</p>';
+                return;
+            }
+
+            galleryContainer.innerHTML = drawings.reverse().map(drawing => 
+                '<div class="drawing-item">' +
+                    '<button class="delete-btn" onclick="deleteDrawing(' + drawing.id + ')">🗑️</button>' +
+                    '<img src="' + drawing.image + '" alt="Dessin de ' + drawing.author + '">' +
+                    '<div class="drawing-author">✨ ' + drawing.author + '</div>' +
+                '</div>'
+            ).join('');
+        }
+
+        function deleteDrawing(id) {
+            if (!confirm('Supprimer ce dessin ? 🗑️')) return;
+            
+            let drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
+            drawings = drawings.filter(d => d.id !== id);
+            localStorage.setItem('drawingsGallery', JSON.stringify(drawings));
+            loadDrawingsGallery();
+        }
 
         function initCanvas() {
             canvas = document.getElementById('drawingCanvas');
@@ -698,6 +856,11 @@
             canvas.addEventListener('touchstart', handleTouchStart);
             canvas.addEventListener('touchmove', handleTouchMove);
             canvas.addEventListener('touchend', stopDrawing);
+
+            const nameInput = document.getElementById('artistName');
+            if (nameInput && currentUserName) {
+                nameInput.value = currentUserName;
+            }
         }
 
         function startDrawing(e) {
@@ -755,11 +918,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        function saveDrawing() {
-            updateStat('style', 20);
-            showScorePopup('+20 Style Points! Dessin sauvegardé! 🎨');
-        }
-
         let tictactoeBoard = ['', '', '', '', '', '', '', '', ''];
         let currentPlayer = 'X';
         let gameMode = 'solo';
@@ -779,9 +937,13 @@
 
             switch(type) {
                 case 'design':
-                    title.textContent = '🎨 DESIGN STUDIO - Toile de Dessin';
+                    title.textContent = '🎨 DESIGN STUDIO - Atelier Créatif';
                     content.innerHTML = 
-                        '<p style="margin-bottom: 15px;">Crée ton design sur la toile blanche ! Utilise ta souris ou ton doigt pour dessiner.</p>' +
+                        '<div class="name-input-container">' +
+                            '<p style="margin-bottom: 10px; color: #A48D6F;">✨ Entre ton prénom pour signer tes créations ✨</p>' +
+                            '<input type="text" id="artistName" class="name-input" placeholder="Ton prénom..." value="' + currentUserName + '">' +
+                        '</div>' +
+                        '<p style="margin-bottom: 15px;">Dessine ta création ! Utilise ta souris ou ton doigt.</p>' +
                         '<canvas id="drawingCanvas" width="450" height="350"></canvas>' +
                         '<div class="drawing-tools">' +
                             '<div class="tool-group">' +
@@ -793,12 +955,20 @@
                                 '<input type="range" id="brushSize" min="1" max="30" value="5" oninput="changeBrushSize(this.value)">' +
                             '</div>' +
                         '</div>' +
-                        '<div style="margin-top: 15px;">' +
-                            '<button class="action-btn" onclick="clearCanvas()">🗑️ Effacer tout</button>' +
-                            '<button class="action-btn" onclick="saveDrawing()">💾 Sauvegarder (+20 Style)</button>' +
+                        '<div style="margin: 15px 0;">' +
+                            '<button class="action-btn" onclick="clearCanvas()">🗑️ Effacer</button>' +
+                            '<button class="action-btn" onclick="saveDrawingToGallery()">💾 Sauvegarder (+20 Style)</button>' +
+                            '<button class="action-btn" onclick="loadDrawingsGallery()">📂 Voir la Galerie</button>' +
+                        '</div>' +
+                        '<div style="margin-top: 20px;">' +
+                            '<h3 style="color: #A48D6F; margin-bottom: 10px;">📸 Galerie des Créations</h3>' +
+                            '<div id="drawingsGallery" class="drawings-gallery"></div>' +
                         '</div>';
                     
-                    setTimeout(initCanvas, 100);
+                    setTimeout(() => {
+                        initCanvas();
+                        loadDrawingsGallery();
+                    }, 100);
                     break;
 
                 case 'cats':
