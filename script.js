@@ -6,6 +6,16 @@ const mainChar = document.getElementById("main-char");
 const leftChar = document.getElementById("left-char");
 const rightChar = document.getElementById("right-char");
 
+// OPTIONNEL: champ prénom si présent dans votre HTML d'accueil
+// <input id="player-name" placeholder="Ton prénom..." />
+const nameInput = document.getElementById("player-name");
+
+// Récupère prénom s'il existe déjà
+let currentUserName = localStorage.getItem("currentUserName") || "";
+if (nameInput) {
+  nameInput.value = currentUserName;
+}
+
 document.getElementById("next").addEventListener("click", () => {
     currentIndex = (currentIndex + 1) % characters.length;
     updateCharacters();
@@ -23,10 +33,21 @@ function updateCharacters() {
 }
 
 document.getElementById("start").addEventListener("click", () => {
+    // 1) Sauvegarde du prénom (si champ présent)
+    let inputName = currentUserName;
+    if (nameInput) {
+      inputName = (nameInput.value || "").trim();
+      if (!inputName) {
+        alert("Entre ton prénom pour entrer dans le monde ✨");
+        return;
+      }
+      localStorage.setItem("currentUserName", inputName);
+      currentUserName = inputName;
+    }
+
+    // 2) Redirection selon le personnage sélectionné
     const selectedChar = characterNames[currentIndex];
-    
-    // Redirection selon le personnage sélectionné
-    switch(selectedChar) {
+    switch (selectedChar) {
         case 'Aria':
             window.location.href = 'aria-world.html';
             break;
