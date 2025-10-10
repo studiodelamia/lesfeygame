@@ -154,7 +154,7 @@
     }
     .drawing-item:hover .delete-btn{ display:flex; }
 
-    /* Leaderboard Panel (replaces Stats) */
+    /* Leaderboard Panel */
     .leaderboard-panel{
       position:fixed; bottom:20px; left:20px;
       background:linear-gradient(135deg, rgba(48,39,34,0.9), rgba(113,104,95,0.9));
@@ -185,6 +185,36 @@
       100%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
     }
   </style>
+
+  <!-- Firebase (module): remplis la configuration ci-dessous -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, doc, getDoc, setDoc, updateDoc, increment, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    // REMPLACER par la config de ton projet Firebase (Console > Project settings > SDK setup)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      appId: "YOUR_APP_ID"
+    }; // Nécessaire pour activer Firestore/Storage côté Web[web:220]
+
+    const app = initializeApp(firebaseConfig); // Initialise Firebase[web:220]
+    const auth = getAuth(app);                // Auth anonyme pour autoriser l’écriture[web:220]
+    await signInAnonymously(auth);            // Connexion sans compte pour tous[web:220]
+
+    const db = getFirestore(app);             // Base temps réel Firestore[web:142]
+    const storage = getStorage(app);          // Stockage d’images public/lecture[web:207]
+
+    // Expose pour le script non-module
+    window.FB = {
+      db, storage, auth,
+      fns: { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, doc, getDoc, setDoc, updateDoc, increment, limit, ref, uploadBytes, getDownloadURL }
+    };
+  </script>
 </head>
 <body>
   <div class="content">
@@ -296,7 +326,7 @@
       setTimeout(()=>{ popup.style.display='none'; },2000);
     }
 
-    // ============ Leaderboard (weekly, localStorage) ============
+    // ============ Semaine ISO ============
     function getWeekId(d=new Date()){
       const date=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
       date.setUTCDate(date.getUTCDate()+4-(date.getUTCDay()||7));
@@ -306,26 +336,40 @@
       const ww=String(weekNo).padStart(2,'0');
       return `${yy}-${ww}`;
     }
-    const LB_NS='leaderboard';
-    function lbKey(){ return `${LB_NS}:${getWeekId()}`; }
-    function getLeaderboard(){ const raw=localStorage.getItem(lbKey()); return raw?JSON.parse(raw):{}; }
-    function setLeaderboard(obj){ localStorage.setItem(lbKey(), JSON.stringify(obj)); }
+
+    // ============ Leaderboard (Firestore temps réel) ============
+    function lbPath(){ return `leaderboards/${getWeekId()}/scores`; }
+    async function addWinPoint(name){
+      if(!name || !window.FB) return;
+      const { doc, getDoc, setDoc, updateDoc, increment } = FB.fns;
+      const ref = doc(FB.db, lbPath(), name.trim().toLowerCase());
+      const snap = await getDoc(ref);
+      if(!snap.exists()) await setDoc(ref,{ name, points:1 });
+      else await updateDoc(ref,{ points: increment(1) });
+    }
+    async function ensureNameRegistered(name){
+      if(!name || !window.FB) return;
+      const { doc, getDoc, setDoc } = FB.fns;
+      const ref = doc(FB.db, lbPath(), name.trim().toLowerCase());
+      const snap = await getDoc(ref);
+      if(!snap.exists()) await setDoc(ref,{ name, points:0 });
+    }
     function renderLeaderboard(){
+      if(!window.FB) return;
       const ul=document.getElementById('leaderboardList');
       const w=document.getElementById('lbWeek');
       if(!ul||!w) return;
       w.textContent=getWeekId();
-      const table=getLeaderboard();
-      const entries=Object.entries(table).sort((a,b)=>b[1]-a[1]).slice(0,8);
-      ul.innerHTML= entries.length ? entries.map(([n,s])=>`<li><span>${n}</span><span>${s} pt</span></li>`).join('') : `<li><span>Aucun point</span><span>—</span></li>`;
-    }
-    function addWinPoint(playerName){
-      if(!playerName) return;
-      const table=getLeaderboard();
-      table[playerName]=(table[playerName]||0)+1;
-      setLeaderboard(table);
-      renderLeaderboard();
-      showScorePopup(`+1 point pour ${playerName} ✨`);
+      const { collection, query, orderBy, limit, onSnapshot } = FB.fns;
+      const q = query(collection(FB.db, lbPath()), orderBy('points','desc'), limit(10));
+      onSnapshot(q, (snap)=>{
+        const rows=[];
+        snap.forEach(docSnap=>{
+          const d=docSnap.data();
+          rows.push(`<li><span>${d.name}</span><span>${d.points} pt</span></li>`);
+        });
+        ul.innerHTML = rows.length ? rows.join('') : `<li><span>Aucun point</span><span>—</span></li>`;
+      });
     }
 
     // Identity
@@ -339,14 +383,16 @@
     const lbSaveBtn=document.getElementById('lbSave');
     if(lbNameInput){ lbNameInput.value=currentUserName; }
     if(lbSaveBtn){
-      lbSaveBtn.onclick=()=>{
+      lbSaveBtn.onclick=async ()=>{
         setUserName(lbNameInput.value);
+        await ensureNameRegistered(currentUserName);
+        renderLeaderboard();
         showScorePopup(`Nom enregistré: ${currentUserName}`);
       };
     }
     renderLeaderboard();
 
-    // ============ Design Studio (canvas + galerie) ============
+    // ============ Design Studio (canvas + Galerie publique Firebase) ============
     let canvas, ctx, isDrawing=false, currentColor='#ff6b9d', brushSize=5;
     function initCanvas(){
       canvas=document.getElementById('drawingCanvas');
@@ -367,39 +413,45 @@
     function changeBrushSize(size){ brushSize=size; if(ctx) ctx.lineWidth=size; const el=document.getElementById('brushSizeValue'); if(el) el.textContent=size+'px'; }
     function clearCanvas(){ if(ctx&&canvas) ctx.clearRect(0,0,canvas.width,canvas.height); }
 
+    // Galerie publique: Storage + Firestore
     function saveDrawingToGallery(){
       const nameInput=document.getElementById('artistName');
-      const userName = nameInput ? nameInput.value.trim() : currentUserName;
+      const userName = (nameInput?.value || currentUserName || '').trim();
       if(!userName){ alert("Entre ton prénom avant de sauvegarder 💅"); return; }
       setUserName(userName); if(lbNameInput) lbNameInput.value=currentUserName;
+      if(!window.FB){ alert('Firebase non initialisé'); return; }
 
-      const imageData = canvas.toDataURL('image/png');
-      const drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
-      drawings.push({ id:Date.now(), author:userName, image:imageData, date:new Date().toLocaleDateString('fr-FR') });
-      localStorage.setItem('drawingsGallery', JSON.stringify(drawings));
-      showScorePopup(`Dessin sauvegardé par ${userName} 🎨`);
-      loadDrawingsGallery();
+      canvas.toBlob(async (blob)=>{
+        if(!blob){ alert('Aucun dessin à sauvegarder'); return; }
+        const weekId = getWeekId();
+        const filePath = `drawings/${weekId}/${userName}/${Date.now()}.png`;
+        const { ref, uploadBytes, getDownloadURL, addDoc, collection, serverTimestamp } = FB.fns;
+        const fileRef = ref(FB.storage, filePath);
+        await uploadBytes(fileRef, blob);
+        const url = await getDownloadURL(fileRef);
+        await addDoc(collection(FB.db, 'drawings'), { author:userName, url, weekId, createdAt: serverTimestamp() });
+        showScorePopup(`Dessin sauvegardé par ${userName} 🎨`);
+      }, 'image/png');
     }
     function loadDrawingsGallery(){
+      if(!window.FB) return;
       const gal=document.getElementById('drawingsGallery'); if(!gal) return;
-      const drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
-      if(drawings.length===0){ gal.innerHTML='<p style="text-align:center;color:#ccc;padding:20px;">Aucun dessin encore... ✨</p>'; return; }
-      gal.innerHTML = drawings.slice().reverse().map(d=>`
-        <div class="drawing-item">
-          <button class="delete-btn" onclick="deleteDrawing(${d.id})">🗑️</button>
-          <img src="${d.image}" alt="Dessin de ${d.author}"/>
-          <div class="drawing-author">✨ ${d.author}</div>
-        </div>
-      `).join('');
+      const { collection, query, where, orderBy, onSnapshot } = FB.fns;
+      const q = query(collection(FB.db,'drawings'), where('weekId','==', getWeekId()), orderBy('createdAt','desc'));
+      onSnapshot(q,(snap)=>{
+        const rows=[];
+        snap.forEach(docSnap=>{
+          const d=docSnap.data();
+          rows.push(`
+            <div class="drawing-item">
+              <img src="${d.url}" alt="Dessin de ${d.author}"/>
+              <div class="drawing-author">✨ ${d.author}</div>
+            </div>
+          `);
+        });
+        gal.innerHTML = rows.length ? rows.join('') : '<p style="text-align:center;color:#ccc;padding:20px;">Aucun dessin encore... ✨</p>';
+      });
     }
-    function deleteDrawing(id){
-      if(!confirm('Supprimer ce dessin ?')) return;
-      let drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
-      drawings = drawings.filter(d=> d.id!==id);
-      localStorage.setItem('drawingsGallery', JSON.stringify(drawings));
-      loadDrawingsGallery();
-    }
-    window.deleteDrawing=deleteDrawing;
 
     // ============ Morpion (tic-tac-toe) ============
     let tictactoeBoard=['','','','','','','','',''];
@@ -486,13 +538,12 @@
       if(sd) sd.textContent=tictactoeScore.draws;
     }
 
-    // ============ Nouveaux mini-jeux ============
-    // Fallback in case leaderboard not set elsewhere
+    // ============ Mini-jeux: Tetris / Wordle / Memory / Connect4 ============
     window.addWinPoint = window.addWinPoint || function(){};
     window.currentUserName = window.currentUserName || currentUserName;
 
-    // --- Mini Tetris ---
-    let tCanvas, tCtx, tGrid, tPiece, tTimer, tCleared;
+    // --- Mini Tetris (score + lignes) ---
+    let tCanvas, tCtx, tGrid, tPiece, tTimer, tCleared, tScore=0, tLines=0;
     const T_W=10, T_H=20, T_S=24;
     const TETROS={ I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]], L:[[1,0],[1,0],[1,1]], J:[[0,1],[0,1],[1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]] };
     const COLORS={1:'#ff6b9d'};
@@ -521,7 +572,15 @@
         }
       }
       tCleared+=cleared;
-      if(cleared>0 && currentUserName) addWinPoint(currentUserName);
+      if(cleared>0){
+        // barème simple
+        const add = cleared===1?100 : cleared===2?300 : cleared===3?500 : 800;
+        tScore += add; tLines += cleared;
+        const s=document.getElementById('tScore'), l=document.getElementById('tLines');
+        if(s) s.textContent=String(tScore);
+        if(l) l.textContent=String(tLines);
+        if(currentUserName) addWinPoint(currentUserName);
+      }
     }
     function tDraw(){
       tCtx.clearRect(0,0,tCanvas.width,tCanvas.height);
@@ -543,240 +602,14 @@
     function initTetris(container){
       container.innerHTML = `
         <p>Aligne des lignes (⬅️➡️⬇️, R pour pivoter). Efface ≥1 ligne pour +1 point.</p>
+        <div style="margin:8px 0; color:#A48D6F;">Score: <span id="tScore">0</span> • Lignes: <span id="tLines">0</span></div>
         <canvas id="tetrisCanvas" width="${T_W*T_S}" height="${T_H*T_S}" style="background:#111;border:2px solid #A48D6F;border-radius:10px;"></canvas>
       `;
       tCanvas=document.getElementById('tetrisCanvas'); tCtx=tCanvas.getContext('2d');
-      tGrid=tNewGrid(); tPiece=tRandomPiece(); tCleared=0; tDraw();
+      tGrid=tNewGrid(); tPiece=tRandomPiece(); tCleared=0; tScore=0; tLines=0; tDraw();
       document.onkeydown=(e)=>{
         if(!tPiece) return;
         if(e.key==='ArrowLeft' && !tCollide(tPiece.m,tPiece.x-1,tPiece.y)) tPiece.x--;
         if(e.key==='ArrowRight'&& !tCollide(tPiece.m,tPiece.x+1,tPiece.y)) tPiece.x++;
         if(e.key==='ArrowDown' && !tCollide(tPiece.m,tPiece.x,tPiece.y+1)) tPiece.y++;
-        if(e.key==='r'||e.key==='R'){ const rm=tRotate(tPiece.m); if(!tCollide(rm,tPiece.x,tPiece.y)) tPiece.m=rm; }
-        tDraw();
-      };
-      clearInterval(tTimer); tTimer=setInterval(tStep, 550);
-    }
-
-    // --- Wordle ---
-    let WORDS=['ROSE','MODE','LOOK','VIBE','GLAM','PARIS','NINJA','STYLE','CHANT','PERLE'];
-    let wordleTarget='', wordleRow=0;
-    function initWordle(container){
-      wordleTarget=WORDS[Math.floor(Math.random()*WORDS.length)];
-      wordleRow=0;
-      container.innerHTML=`
-        <p>Devine le mot (5 lettres). 6 essais. Vert=bon, Jaune=présent, Gris=absent.</p>
-        <div id="wGrid" style="display:grid;grid-template-rows:repeat(6,1fr);gap:8px;justify-content:center;"></div>
-        <div style="margin-top:10px;">
-          <input id="wGuess" maxlength="5" style="text-transform:uppercase;padding:8px 12px;border-radius:8px;border:1px solid #A48D6F;">
-          <button class="action-btn" id="wTry">Valider</button>
-        </div>
-      `;
-      const grid=document.getElementById('wGrid');
-      for(let r=0;r<6;r++){
-        const row=document.createElement('div');
-        row.style.cssText='display:grid;grid-template-columns:repeat(5,48px);gap:6px;justify-content:center;';
-        for(let c=0;c<5;c++){
-          const cell=document.createElement('div');
-          cell.style.cssText='width:48px;height:48px;border-radius:8px;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-weight:bold;background:#0d0d0d;';
-          row.appendChild(cell);
-        }
-        grid.appendChild(row);
-      }
-      document.getElementById('wTry').onclick=submitWordle;
-      document.getElementById('wGuess').onkeydown=(e)=>{ if(e.key==='Enter') submitWordle(); };
-    }
-    function submitWordle(){
-      const input=document.getElementById('wGuess'); if(!input) return;
-      const guess=(input.value||'').toUpperCase(); if(guess.length!==5) return;
-      const grid=document.getElementById('wGrid'); const row=grid.children[wordleRow];
-      const target=wordleTarget; const used=target.split(''); const colors=Array(5).fill('gray');
-      for(let i=0;i<5;i++){ if(guess[i]===target[i]){ colors[i]='green'; used[i]=null; } }
-      for(let i=0;i<5;i++){ if(colors[i]==='green') continue; const idx=used.indexOf(guess[i]); if(idx>-1){ colors[i]='gold'; used[idx]=null; } }
-      for(let i=0;i<5;i++){
-        const cell=row.children[i]; cell.textContent=guess[i]; cell.style.borderColor='#222';
-        cell.style.background = colors[i]==='green'?'#10b981':colors[i]==='gold'?'#f59e0b':'#374151';
-      }
-      if(guess===target){ if(currentUserName) addWinPoint(currentUserName); input.disabled=true; return; }
-      wordleRow++; input.value=''; if(wordleRow>=6){ input.disabled=true; }
-    }
-
-    // --- Memory (paires) ---
-    function initMemory(container){
-      const icons=['💄','👠','👗','💍','🕶️','👑'];
-      const deck=[...icons,...icons].sort(()=>Math.random()-0.5);
-      let first=null, lock=false, matched=0;
-      container.innerHTML=`
-        <p>Retourne toutes les paires pour gagner 1 point.</p>
-        <div id="memGrid" style="display:grid;grid-template-columns:repeat(4,90px);gap:10px;justify-content:center;"></div>
-      `;
-      const grid=container.querySelector('#memGrid');
-      deck.forEach(ico=>{
-        const card=document.createElement('button');
-        card.setAttribute('data-ico',ico);
-        card.style.cssText='width:90px;height:90px;border:2px solid #A48D6F;border-radius:12px;background:rgba(164,141,111,.15);color:#fff;font-size:2rem;';
-        card.textContent='?';
-        card.onclick=()=>{
-          if(lock || card.classList.contains('ok') || card.textContent!=='?') return;
-          card.textContent=ico;
-          if(!first){ first=card; return; }
-          if(first.getAttribute('data-ico')===ico){
-            first.classList.add('ok'); card.classList.add('ok'); first=null; matched++;
-            if(matched===icons.length){ if(currentUserName) addWinPoint(currentUserName); }
-          }else{
-            lock=true; setTimeout(()=>{ first.textContent='?'; card.textContent='?'; first=null; lock=false; },600);
-          }
-        };
-        grid.appendChild(card);
-      });
-    }
-
-    // --- Puissance 4 ---
-    const C4_W=7, C4_H=6;
-    let c4Grid, c4Player;
-    function c4New(){ c4Grid=Array.from({length:C4_H},()=>Array(C4_W).fill(0)); c4Player=1; }
-    function c4Drop(col){ for(let r=C4_H-1;r>=0;r--){ if(!c4Grid[r][col]){ c4Grid[r][col]=c4Player; return r; } } return -1; }
-    function c4WinAt(r,c){
-      const p=c4Grid[r][c]; if(!p) return false;
-      const dirs=[[1,0],[0,1],[1,1],[1,-1]];
-      for(const [dx,dy] of dirs){
-        let count=1;
-        for(let s=1;s<4;s++){ const x=c+dx*s, y=r+dy*s; if(y<0||y>=C4_H||x<0||x>=C4_W||c4Grid[y][x]!==p) break; count++; }
-        for(let s=1;s<4;s++){ const x=c-dx*s, y=r-dy*s; if(y<0||y>=C4_H||x<0||x>=C4_W||c4Grid[y][x]!==p) break; count++; }
-        if(count>=4) return true;
-      }
-      return false;
-    }
-    function drawC4(container){
-      const board=container.querySelector('#c4Board'); board.innerHTML='';
-      for(let r=0;r<C4_H;r++)for(let c=0;c<C4_W;c++){
-        const cell=document.createElement('div');
-        cell.style.cssText='width:64px;height:64px;border-radius:50%;margin:6px;background:'+(c4Grid[r][c]===0?'#222':c4Grid[r][c]===1?'#ff6b9d':'#4fc3f7')+';';
-        board.appendChild(cell);
-      }
-    }
-    function initConnect4(container){
-      container.innerHTML=`
-        <p>Clique une colonne pour jouer. Aligne 4 pour +1 point.</p>
-        <div id="c4Cols" style="display:grid;grid-template-columns:repeat(7,76px);gap:6px;justify-content:center;margin-bottom:6px;">
-          ${Array(C4_W).fill(0).map((_,i)=>`<button class="action-btn" data-col="${i}">↓</button>`).join('')}
-        </div>
-        <div id="c4Board" style="display:grid;grid-template-columns:repeat(7,64px);justify-content:center;background:#0d0d0d;padding:8px;border-radius:12px;border:2px solid #A48D6F;"></div>
-      `;
-      c4New(); drawC4(container);
-      container.querySelectorAll('#c4Cols button').forEach(btn=>{
-        btn.onclick=()=>{
-          const col=+btn.getAttribute('data-col'); const row=c4Drop(col); if(row<0) return;
-          drawC4(container);
-          if(c4WinAt(row,col)){ if(currentUserName) addWinPoint(currentUserName); container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true); return; }
-          c4Player=(c4Player===1)?2:1;
-        };
-      });
-    }
-
-    // ============ startMinigame switch ============
-    function startMinigame(type){
-      const panel=document.getElementById('minigamePanel');
-      const title=document.getElementById('gameTitle');
-      const content=document.getElementById('gameContent');
-
-      switch(type){
-        case 'design':
-          title.textContent='🎨 DESIGN STUDIO - Atelier Créatif';
-          content.innerHTML=`
-            <div class="name-input-container" style="margin:15px 0; padding:15px; background:rgba(164,141,111,0.1); border-radius:15px;">
-              <p style="margin-bottom:10px; color:#A48D6F;">✨ Entre ton prénom pour signer tes créations ✨</p>
-              <input type="text" id="artistName" class="name-input" placeholder="Ton prénom..." value="${currentUserName}">
-            </div>
-            <p style="margin-bottom:15px;">Dessine ta création ! Utilise la souris ou le doigt.</p>
-            <canvas id="drawingCanvas" width="450" height="350"></canvas>
-            <div class="drawing-tools">
-              <div class="tool-group">
-                <span class="tool-label">🎨 Couleur:</span>
-                <input type="color" id="colorPicker" value="#ff6b9d" onchange="changeColor(this.value)">
-              </div>
-              <div class="tool-group">
-                <span class="tool-label">✏️ Taille: <span id="brushSizeValue">5px</span></span>
-                <input type="range" id="brushSize" min="1" max="30" value="5" oninput="changeBrushSize(this.value)">
-              </div>
-            </div>
-            <div style="margin:15px 0;">
-              <button class="action-btn" onclick="clearCanvas()">🗑️ Effacer</button>
-              <button class="action-btn" onclick="saveDrawingToGallery()">💾 Sauvegarder</button>
-              <button class="action-btn" onclick="loadDrawingsGallery()">📂 Voir la Galerie</button>
-            </div>
-            <div style="margin-top:20px;">
-              <h3 style="color:#A48D6F; margin-bottom:10px;">📸 Galerie des Créations</h3>
-              <div id="drawingsGallery" class="drawings-gallery"></div>
-            </div>
-          `;
-          setTimeout(()=>{ initCanvas(); loadDrawingsGallery(); },100);
-          // sync name to leaderboard input
-          setTimeout(()=>{
-            const nm=document.getElementById('artistName');
-            if(nm){ nm.addEventListener('input', (e)=>{ setUserName(e.target.value); const lb=document.getElementById('lbName'); if(lb) lb.value=currentUserName; }); }
-          },150);
-          break;
-
-        case 'rooftop':
-          title.textContent='🌃 ROOFTOP MORPION';
-          initTicTacToe();
-          let boardHTML='';
-          for(let i=0;i<9;i++){ boardHTML+=`<button class="tictactoe-cell" onclick="makeMove(${i})"></button>`; }
-          content.innerHTML=`
-            <div class="tictactoe-game">
-              <div class="game-mode-selector">
-                <button class="mode-btn active" id="soloBtn" onclick="changeGameMode('solo')">🤖 Solo (vs IA)</button>
-                <button class="mode-btn" id="duoBtn" onclick="changeGameMode('duo')">👥 Duo</button>
-              </div>
-              <div class="tictactoe-info" id="tictactoeInfo">Mode: Solo | Tour de X</div>
-              <div class="tictactoe-board" id="tictactoeBoard">${boardHTML}</div>
-              <div class="tictactoe-score">
-                <div class="score-item">X: <span id="scoreX">${tictactoeScore.X}</span></div>
-                <div class="score-item">Égalités: <span id="scoreDraws">${tictactoeScore.draws}</span></div>
-                <div class="score-item">O: <span id="scoreO">${tictactoeScore.O}</span></div>
-              </div>
-              <button class="action-btn" onclick="resetTicTacToe()">🔄 Nouvelle partie</button>
-            </div>
-          `;
-          break;
-
-        case 'tetris':
-          title.textContent='🧱 MINI TETRIS';
-          content.innerHTML=`<div id="tetrisWrap"></div>`;
-          initTetris(document.getElementById('tetrisWrap'));
-          break;
-
-        case 'wordle':
-          title.textContent='🔤 WORDLE (mot aléatoire)';
-          content.innerHTML=`<div id="wordleWrap"></div>`;
-          initWordle(document.getElementById('wordleWrap'));
-          break;
-
-        case 'memory':
-          title.textContent='🧠 MEMORY MATCH';
-          content.innerHTML=`<div id="memoryWrap"></div>`;
-          initMemory(document.getElementById('memoryWrap'));
-          break;
-
-        case 'connect4':
-          title.textContent='🟡 PUISSANCE 4';
-          content.innerHTML=`<div id="c4Wrap"></div>`;
-          initConnect4(document.getElementById('c4Wrap'));
-          break;
-      }
-      panel.style.display='block';
-    }
-
-    function closeMinigame(){ document.getElementById('minigamePanel').style.display='none'; }
-
-    createParticles();
-
-    window.addEventListener('load',()=>{
-      backgroundMusic.play().catch(()=>{
-        document.addEventListener('click',()=>{ if(!isMuted && backgroundMusic.paused){ backgroundMusic.play(); } }, {once:true});
-      });
-    });
-  </script>
-</body>
-</html>
+        if(e.key==='r'||e.key==='
