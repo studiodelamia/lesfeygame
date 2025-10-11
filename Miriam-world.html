@@ -99,7 +99,7 @@
     .close-btn:hover,.action-btn:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(164,141,111,0.4); }
 
     .tictactoe-game{ margin:20px auto; }
-    .game-mode-selector{ display:flex; gap:10px; justify-content:center; margin-bottom:20px; }
+    .game-mode-selector{ display:flex; gap:10px; justify-content:center; margin-bottom:20px; flex-wrap:wrap; }
     .mode-btn{ padding:10px 20px; background:rgba(164,141,111,0.3); border:2px solid #A48D6F; border-radius:15px; color:white; cursor:pointer; transition:all .3s ease; font-family:'DimitriFont', Arial, sans-serif; }
     .mode-btn.active{ background:linear-gradient(45deg,#A48D6F,#71685F); box-shadow:0 0 20px rgba(164,141,111,0.5); }
     .mode-btn:hover{ transform:scale(1.05); }
@@ -243,7 +243,6 @@
     <div class="score-popup" id="scorePopup">+1 point ! ✨</div>
   </div>
 
-  <!-- Firebase SDK (compat) - SANS Storage -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -429,7 +428,6 @@
       if(ctx&&canvas) ctx.clearRect(0,0,canvas.width,canvas.height); 
     }
 
-    // SAUVEGARDE BASE64 DANS FIRESTORE (100% GRATUIT)
     function saveDrawingToGallery(){
       const nameInput=document.getElementById('artistName');
       const userName = (nameInput?.value || currentUserName || '').trim();
@@ -482,10 +480,11 @@
         });
     }
 
-    // ============ Morpion ============
+    // ============ Morpion (CORRIGÉ avec 3 niveaux) ============
     let tictactoeBoard=['','','','','','','','',''];
     let currentPlayer='X';
     let gameMode='solo';
+    let gameDifficulty='moyen';
     let gameActive=true;
     let tictactoeScore={ X:0, O:0, draws:0 };
     const winPatterns=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -505,7 +504,24 @@
         d.classList.remove('active'); 
         (mode==='solo'?s:d).classList.add('active'); 
       }
+      const diffSel = document.getElementById('difficultySelector');
+      if(diffSel) diffSel.style.display = mode==='solo'? 'flex' : 'none';
       updateInfo();
+    }
+
+    function changeDifficulty(level){
+      gameDifficulty=level;
+      const f=document.getElementById('facileBtn'), 
+            m=document.getElementById('moyenBtn'), 
+            h=document.getElementById('difficileBtn');
+      if(f&&m&&h){
+        f.classList.remove('active');
+        m.classList.remove('active');
+        h.classList.remove('active');
+        if(level==='facile') f.classList.add('active');
+        else if(level==='moyen') m.classList.add('active');
+        else h.classList.add('active');
+      }
     }
     
     function updateInfo(){
@@ -526,10 +542,11 @@
         cells[index].disabled=true;
       }
       if(checkWinner()){
+        const winner = currentPlayer;
         endGame(`${currentPlayer} a gagné ! 🎉`);
         tictactoeScore[currentPlayer]++; 
         updateScore();
-        if(currentUserName) addWinPoint(currentUserName);
+        if(winner === 'X' && currentUserName) addWinPoint(currentUserName);
         return;
       }
       if(tictactoeBoard.every(c=>c!=='')){
@@ -563,9 +580,24 @@
     
     function aiMove(){
       if(!gameActive) return;
-      let move=findBestMove('O'); 
-      if(move===-1) move=findBestMove('X'); 
-      if(move===-1) move=getRandomMove();
+      let move = -1;
+      
+      if(gameDifficulty === 'facile'){
+        if(Math.random() < 0.3){
+          move=findBestMove('O'); 
+          if(move===-1) move=findBestMove('X');
+        }
+        if(move===-1) move=getRandomMove();
+      }
+      else if(gameDifficulty === 'moyen'){
+        move=findBestMove('O'); 
+        if(move===-1) move=findBestMove('X'); 
+        if(move===-1) move=getRandomMove();
+      }
+      else {
+        move = minimax(tictactoeBoard, 'O').index;
+      }
+      
       if(move!==-1) makeMove(move);
     }
     
@@ -584,6 +616,31 @@
     function getRandomMove(){
       const empty=tictactoeBoard.map((v,i)=> v===''?i:null).filter(i=>i!==null);
       return empty.length? empty[Math.floor(Math.random()*empty.length)] : -1;
+    }
+
+    function minimax(board, player){
+      const availSpots = board.map((v,i)=> v===''?i:null).filter(i=>i!==null);
+      
+      for(const [a,b,c] of winPatterns){
+        if(board[a]!=='' && board[a]===board[b] && board[a]===board[c]){
+          return {score: board[a]==='O'? 10 : -10};
+        }
+      }
+      if(availSpots.length===0) return {score: 0};
+      
+      const moves=[];
+      for(const i of availSpots){
+        const newBoard=[...board];
+        newBoard[i]=player;
+        const result = minimax(newBoard, player==='O'?'X':'O');
+        moves.push({index:i, score:result.score});
+      }
+      
+      if(player==='O'){
+        return moves.reduce((best,move)=> move.score>best.score? move : best);
+      } else {
+        return moves.reduce((best,move)=> move.score<best.score? move : best);
+      }
     }
     
     function resetTicTacToe(){
@@ -609,7 +666,6 @@
     window.addWinPoint = window.addWinPoint || function(){};
     window.currentUserName = window.currentUserName || currentUserName;
 
-    // Mini Tetris
     let tCanvas, tCtx, tGrid, tPiece, tTimer, tCleared;
     const T_W=10, T_H=20, T_S=24;
     const TETROS={ I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]], L:[[1,0],[1,0],[1,1]], J:[[0,1],[0,1],[1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]] };
@@ -705,7 +761,7 @@
       tTimer=setInterval(tStep, 550);
     }
 
-    // Wordle
+    // Wordle (CORRIGÉ - affiche le mot)
     let WORDS=['ROSE','MODE','LOOK','VIBE','GLAM','PARIS','NINJA','STYLE','CHANT','PERLE'];
     let wordleTarget='', wordleRow=0;
     
@@ -769,16 +825,19 @@
         cell.style.background = colors[i]==='green'?'#10b981':colors[i]==='gold'?'#f59e0b':'#374151';
       }
       if(guess===target){ 
-        if(currentUserName) addWinPoint(currentUserName); 
+        if(currentUserName) addWinPoint(currentUserName);
+        showScorePopup(`Bravo ! Le mot était ${target} 🎉`);
         input.disabled=true; 
         return; 
       }
       wordleRow++; 
       input.value=''; 
-      if(wordleRow>=6){ input.disabled=true; }
+      if(wordleRow>=6){ 
+        input.disabled=true;
+        showScorePopup(`Perdu ! Le mot était: ${target} 😔`);
+      }
     }
 
-    // Memory
     function initMemory(container){
       const icons=['💄','👠','👗','💍','🕶️','👑'];
       const deck=[...icons,...icons].sort(()=>Math.random()-0.5);
@@ -819,7 +878,6 @@
       });
     }
 
-    // Puissance 4
     const C4_W=7, C4_H=6;
     let c4Grid, c4Player;
     
@@ -891,7 +949,6 @@
       });
     }
 
-    // startMinigame
     function startMinigame(type){
       const panel=document.getElementById('minigamePanel');
       const title=document.getElementById('gameTitle');
@@ -952,6 +1009,11 @@
               <div class="game-mode-selector">
                 <button class="mode-btn active" id="soloBtn" onclick="changeGameMode('solo')">🤖 Solo (vs IA)</button>
                 <button class="mode-btn" id="duoBtn" onclick="changeGameMode('duo')">👥 Duo</button>
+              </div>
+              <div class="game-mode-selector" id="difficultySelector" style="margin-top:10px;">
+                <button class="mode-btn" id="facileBtn" onclick="changeDifficulty('facile')">😊 Facile</button>
+                <button class="mode-btn active" id="moyenBtn" onclick="changeDifficulty('moyen')">🧠 Moyen</button>
+                <button class="mode-btn" id="difficileBtn" onclick="changeDifficulty('difficile')">🔥 Difficile</button>
               </div>
               <div class="tictactoe-info" id="tictactoeInfo">Mode: Solo | Tour de X</div>
               <div class="tictactoe-board" id="tictactoeBoard">${boardHTML}</div>
