@@ -180,7 +180,7 @@
 
     <div class="header">
       <img src="baddielogo.png.PNG" alt="Logo" class="logo" onclick="window.location.href='index.html'"/>
-      <div class="player-info"><span>🌙 Miriam's Creative Bubble</span></div>
+      <div class="player-info"><span>🫧 Miriam's Creative Bubble</span></div>
       <button class="sound-toggle" id="soundToggle">🔊</button>
     </div>
 
@@ -362,7 +362,6 @@
       };
     }
 
-    // ============ GALERIE BASE64 (SANS STORAGE) ============
     let canvas, ctx, isDrawing=false, currentColor='#ff6b9d', brushSize=5;
     
     function initCanvas(){
@@ -480,7 +479,6 @@
         });
     }
 
-    // ============ Morpion (CORRIGÉ avec 3 niveaux) ============
     let tictactoeBoard=['','','','','','','','',''];
     let currentPlayer='X';
     let gameMode='solo';
@@ -662,15 +660,23 @@
       if(sd) sd.textContent=tictactoeScore.draws;
     }
 
-    // ============ Mini-jeux ============
     window.addWinPoint = window.addWinPoint || function(){};
     window.currentUserName = window.currentUserName || currentUserName;
 
-    let tCanvas, tCtx, tGrid, tPiece, tTimer, tCleared;
+    // ============ TETRIS AMÉLIORÉ (SCORE + PAUSE + GAME OVER) ============
+    let tCanvas, tCtx, tGrid, tPiece, tTimer, tScore, tPaused, tGameOver;
     const T_W=10, T_H=20, T_S=24;
-    const TETROS={ I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]], L:[[1,0],[1,0],[1,1]], J:[[0,1],[0,1],[1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]] };
+    const TETROS={ 
+      I:[[1,1,1,1]], 
+      O:[[1,1],[1,1]], 
+      T:[[0,1,0],[1,1,1]], 
+      L:[[1,0],[1,0],[1,1]], 
+      J:[[0,1],[0,1],[1,1]], 
+      S:[[0,1,1],[1,1,0]], 
+      Z:[[1,1,0],[0,1,1]] 
+    };
     const COLORS={1:'#ff6b9d'};
-    
+
     function tNewGrid(){ return Array.from({length:T_H},()=>Array(T_W).fill(0)); }
     function tRandomPiece(){ 
       const ks=Object.keys(TETROS); 
@@ -678,6 +684,7 @@
       return {m:TETROS[k].map(r=>r.slice()), x:3, y:-2}; 
     }
     function tRotate(m){ return m[0].map((_,i)=>m.map(row=>row[i]).reverse()); }
+
     function tCollide(m,ox,oy){
       for(let y=0;y<m.length;y++)for(let x=0;x<m[0].length;x++){
         if(!m[y][x]) continue; 
@@ -687,6 +694,7 @@
       } 
       return false;
     }
+
     function tMerge(){
       const m=tPiece.m;
       for(let y=0;y<m.length;y++)for(let x=0;x<m[0].length;x++){
@@ -695,6 +703,7 @@
         if(ny>=0) tGrid[ny][nx]=1;
       }
     }
+
     function tClearLines(){
       let cleared=0;
       for(let y=T_H-1;y>=0;y--){
@@ -705,9 +714,16 @@
           y++;
         }
       }
-      tCleared+=cleared;
-      if(cleared>0 && currentUserName) addWinPoint(currentUserName);
+      
+      if(cleared === 1) tScore += 10;
+      else if(cleared === 2) tScore += 30;
+      else if(cleared === 3) tScore += 60;
+      else if(cleared === 4) tScore += 100;
+      
+      const scoreEl = document.getElementById('tetrisScore');
+      if(scoreEl) scoreEl.textContent = tScore;
     }
+
     function tDraw(){
       tCtx.clearRect(0,0,tCanvas.width,tCanvas.height);
       for(let y=0;y<T_H;y++)for(let x=0;x<T_W;x++){ 
@@ -724,44 +740,112 @@
         if(ny>=0) tCtx.fillRect(nx*T_S,ny*T_S,T_S-1,T_S-1);
       }
     }
+
     function tStep(){
+      if(tPaused || tGameOver) return;
+      
       const ny=tPiece.y+1;
-      if(!tCollide(tPiece.m,tPiece.x,ny)) tPiece.y=ny;
-      else{
+      if(!tCollide(tPiece.m,tPiece.x,ny)) {
+        tPiece.y=ny;
+      } else {
         tMerge(); 
         tClearLines(); 
         tPiece=tRandomPiece();
-        if(tCollide(tPiece.m,tPiece.x,tPiece.y)){ clearInterval(tTimer); }
+        
+        if(tCollide(tPiece.m,tPiece.x,tPiece.y)){ 
+          tGameOver = true;
+          clearInterval(tTimer);
+          
+          const info = document.getElementById('tetrisInfo');
+          if(info) info.innerHTML = `
+            <span style="color:#ff6b9d;font-size:1.5rem;">GAME OVER! 🎮</span><br>
+            <span style="font-size:1.2rem;">Score final: ${tScore} points</span>
+          `;
+          
+          if(tScore >= 100 && currentUserName){
+            addWinPoint(currentUserName);
+            showScorePopup(`+1 point ! Score: ${tScore} 🎉`);
+          }
+        }
       }
       tDraw();
     }
+
+    function tTogglePause(){
+      tPaused = !tPaused;
+      const btn = document.getElementById('tetrisPauseBtn');
+      if(btn) btn.textContent = tPaused ? '▶️ Reprendre' : '⏸️ Pause';
+      
+      const info = document.getElementById('tetrisInfo');
+      if(info && tPaused) {
+        info.textContent = '⏸️ PAUSE';
+      } else if(info && !tGameOver) {
+        info.textContent = 'En jeu... Utilise les flèches et R pour pivoter';
+      }
+    }
+
     function initTetris(container){
       container.innerHTML = `
-        <p>Aligne des lignes (⬅️➡️⬇️, R pour pivoter). Efface ≥1 ligne pour +1 point.</p>
-        <canvas id="tetrisCanvas" width="${T_W*T_S}" height="${T_H*T_S}" style="background:#111;border:2px solid #A48D6F;border-radius:10px;"></canvas>
+        <p style="margin-bottom:10px;">
+          <strong>Points:</strong> 1 ligne = 10pts | 2 lignes = 30pts | 3 lignes = 60pts | 4 lignes = 100pts 🔥
+        </p>
+        <div style="display:flex;justify-content:center;align-items:center;gap:15px;margin-bottom:10px;">
+          <div style="text-align:center;">
+            <div style="color:#A48D6F;font-size:1.8rem;font-weight:bold;">
+              Score: <span id="tetrisScore" style="color:#ff6b9d;">0</span>
+            </div>
+          </div>
+          <button class="action-btn" id="tetrisPauseBtn" onclick="tTogglePause()">⏸️ Pause</button>
+        </div>
+        <div id="tetrisInfo" style="color:#A48D6F;margin-bottom:10px;font-size:.9rem;">
+          En jeu... Utilise les flèches et R pour pivoter
+        </div>
+        <canvas id="tetrisCanvas" width="${T_W*T_S}" height="${T_H*T_S}" 
+          style="background:#111;border:2px solid #A48D6F;border-radius:10px;"></canvas>
       `;
+      
       tCanvas=document.getElementById('tetrisCanvas'); 
       tCtx=tCanvas.getContext('2d');
       tGrid=tNewGrid(); 
       tPiece=tRandomPiece(); 
-      tCleared=0; 
+      tScore=0;
+      tPaused=false;
+      tGameOver=false;
       tDraw();
+      
       document.onkeydown=(e)=>{
-        if(!tPiece) return;
-        if(e.key==='ArrowLeft' && !tCollide(tPiece.m,tPiece.x-1,tPiece.y)) tPiece.x--;
-        if(e.key==='ArrowRight'&& !tCollide(tPiece.m,tPiece.x+1,tPiece.y)) tPiece.x++;
-        if(e.key==='ArrowDown' && !tCollide(tPiece.m,tPiece.x,tPiece.y+1)) tPiece.y++;
+        if(tGameOver || tPaused || !tPiece) return;
+        
+        if(e.key==='ArrowLeft' && !tCollide(tPiece.m,tPiece.x-1,tPiece.y)) {
+          tPiece.x--;
+          tDraw();
+        }
+        if(e.key==='ArrowRight'&& !tCollide(tPiece.m,tPiece.x+1,tPiece.y)) {
+          tPiece.x++;
+          tDraw();
+        }
+        if(e.key==='ArrowDown' && !tCollide(tPiece.m,tPiece.x,tPiece.y+1)) {
+          tPiece.y++;
+          tDraw();
+        }
         if(e.key==='r'||e.key==='R'){ 
           const rm=tRotate(tPiece.m); 
-          if(!tCollide(rm,tPiece.x,tPiece.y)) tPiece.m=rm; 
+          if(!tCollide(rm,tPiece.x,tPiece.y)) {
+            tPiece.m=rm;
+            tDraw();
+          }
         }
-        tDraw();
+        if(e.key===' '){
+          e.preventDefault();
+          tTogglePause();
+        }
       };
+      
       clearInterval(tTimer); 
       tTimer=setInterval(tStep, 550);
     }
 
-    // Wordle (CORRIGÉ - affiche le mot)
+    // Wordle
     let WORDS=['ROSE','MODE','LOOK','VIBE','GLAM','PARIS','NINJA','STYLE','CHANT','PERLE'];
     let wordleTarget='', wordleRow=0;
     
