@@ -109,8 +109,8 @@
     }
     .tictactoe-cell:hover:not(:disabled){ background:rgba(164,141,111,0.4); transform:scale(1.05); box-shadow:0 0 15px rgba(164,141,111,0.3); }
     .tictactoe-cell:disabled{ cursor:not-allowed; opacity:.7; }
-    .tictactoe-cell.x{ color:#ff6b9d; text-shadow:0 0 10px #ff6b9d; }
-    .tictactoe-cell.o{ color:#4fc3f7; text-shadow:0 0 10px #4fc3f7; }
+    .tictactoe-cell.x{ color:#000; text-shadow:0 0 10px rgba(0,0,0,0.3); }
+    .tictactoe-cell.o{ color:#A48D6F; text-shadow:0 0 10px #A48D6F; }
     .tictactoe-info{ text-align:center; margin:20px 0; font-size:1.2rem; color:#A48D6F; text-shadow:0 0 10px rgba(164,141,111,0.5); }
     .tictactoe-score{ display:flex; justify-content:space-around; margin:20px 0; font-size:1rem; }
     .score-item{ padding:10px 15px; background:rgba(164,141,111,0.2); border-radius:10px; border:1px solid #A48D6F; }
@@ -960,7 +960,6 @@
       });
     }
 
-    // ============ PUISSANCE 4 AMÉLIORÉ (SOLO + DUO + 3 NIVEAUX) ============
     const C4_W=7, C4_H=6;
     let c4Grid, c4Player, c4GameMode='solo', c4Difficulty='moyen', c4GameActive=true;
 
@@ -1145,7 +1144,7 @@
           if(c4WinAt(row,col)){
             c4GameActive=false;
             const info=document.getElementById('c4Info');
-            if(info) info.innerHTML=`<span style="color:#4fc3f7;font-size:1.3rem;">L'IA a gagné ! 🤖</span>`;
+            if(info) info.innerHTML=`<span style="color:#A48D6F;font-size:1.3rem;">L'IA a gagné ! 🤖</span>`;
             container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true);
             return;
           }
@@ -1160,7 +1159,7 @@
           
           c4Player=1;
           const info=document.getElementById('c4Info');
-          if(info) info.textContent=`À toi de jouer ! (Rouge)`;
+          if(info) info.textContent=`À toi de jouer ! (Noir)`;
         }, 500);
       }
     }
@@ -1171,7 +1170,7 @@
       board.innerHTML='';
       for(let r=0;r<C4_H;r++)for(let c=0;c<C4_W;c++){
         const cell=document.createElement('div');
-        cell.style.cssText='width:64px;height:64px;border-radius:50%;margin:6px;background:'+(c4Grid[r][c]===0?'#222':c4Grid[r][c]===1?'#ff6b9d':'#4fc3f7')+';';
+        cell.style.cssText='width:64px;height:64px;border-radius:50%;margin:6px;background:'+(c4Grid[r][c]===0?'#222':c4Grid[r][c]===1?'#000':'#A48D6F')+';';
         board.appendChild(cell);
       }
     }
@@ -1187,7 +1186,7 @@
           <button class="mode-btn active" id="c4MoyenBtn" onclick="c4ChangeDifficulty('moyen')">🧠 Moyen</button>
           <button class="mode-btn" id="c4DifficileBtn" onclick="c4ChangeDifficulty('difficile')">🔥 Difficile</button>
         </div>
-        <div id="c4Info" style="color:#A48D6F;margin:15px 0;font-size:1.1rem;">À toi de jouer ! (Rouge)</div>
+        <div id="c4Info" style="color:#A48D6F;margin:15px 0;font-size:1.1rem;">À toi de jouer ! (Noir)</div>
         <div id="c4Cols" style="display:grid;grid-template-columns:repeat(7,76px);gap:6px;justify-content:center;margin-bottom:6px;">
           ${Array(C4_W).fill(0).map((_,i)=>`<button class="action-btn" data-col="${i}">↓</button>`).join('')}
         </div>
@@ -1212,9 +1211,9 @@
           
           if(c4WinAt(row,col)){
             c4GameActive=false;
-            const winner = c4Player===1? 'Rouge' : 'Bleu';
+            const winner = c4Player===1? 'Noir' : 'Doré';
             const info=document.getElementById('c4Info');
-            if(info) info.innerHTML=`<span style="color:${c4Player===1?'#ff6b9d':'#4fc3f7'};font-size:1.3rem;">${winner} a gagné ! 🎉</span>`;
+            if(info) info.innerHTML=`<span style="color:${c4Player===1?'#000':'#A48D6F'};font-size:1.3rem;">${winner} a gagné ! 🎉</span>`;
             
             if(c4Player===1 && currentUserName) addWinPoint(currentUserName);
             container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true);
@@ -1233,7 +1232,7 @@
           
           const info=document.getElementById('c4Info');
           if(c4GameMode==='duo'){
-            if(info) info.textContent=`Tour de ${c4Player===1?'Rouge':'Bleu'}`;
+            if(info) info.textContent=`Tour de ${c4Player===1?'Noir':'Doré'}`;
           } else {
             if(info) info.textContent=`L'IA réfléchit... 🤖`;
             c4AIMove();
