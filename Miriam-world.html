@@ -663,7 +663,6 @@
     window.addWinPoint = window.addWinPoint || function(){};
     window.currentUserName = window.currentUserName || currentUserName;
 
-    // ============ TETRIS AMÉLIORÉ (SCORE + PAUSE + GAME OVER) ============
     let tCanvas, tCtx, tGrid, tPiece, tTimer, tScore, tPaused, tGameOver;
     const T_W=10, T_H=20, T_S=24;
     const TETROS={ 
@@ -845,7 +844,6 @@
       tTimer=setInterval(tStep, 550);
     }
 
-    // Wordle
     let WORDS=['ROSE','MODE','LOOK','VIBE','GLAM','PARIS','NINJA','STYLE','CHANT','PERLE'];
     let wordleTarget='', wordleRow=0;
     
@@ -962,13 +960,47 @@
       });
     }
 
+    // ============ PUISSANCE 4 AMÉLIORÉ (SOLO + DUO + 3 NIVEAUX) ============
     const C4_W=7, C4_H=6;
-    let c4Grid, c4Player;
-    
+    let c4Grid, c4Player, c4GameMode='solo', c4Difficulty='moyen', c4GameActive=true;
+
     function c4New(){ 
       c4Grid=Array.from({length:C4_H},()=>Array(C4_W).fill(0)); 
-      c4Player=1; 
+      c4Player=1;
+      c4GameActive=true;
     }
+
+    function c4ChangeMode(mode){
+      c4GameMode=mode;
+      c4New();
+      const s=document.getElementById('c4SoloBtn'), d=document.getElementById('c4DuoBtn');
+      if(s&&d){
+        s.classList.remove('active');
+        d.classList.remove('active');
+        (mode==='solo'?s:d).classList.add('active');
+      }
+      const diffSel = document.getElementById('c4DifficultySelector');
+      if(diffSel) diffSel.style.display = mode==='solo'? 'flex' : 'none';
+      
+      const container = document.getElementById('c4Wrap');
+      if(container) drawC4(container);
+    }
+
+    function c4ChangeDifficulty(level){
+      c4Difficulty=level;
+      const f=document.getElementById('c4FacileBtn'), 
+            m=document.getElementById('c4MoyenBtn'), 
+            h=document.getElementById('c4DifficileBtn');
+      if(f&&m&&h){
+        f.classList.remove('active');
+        m.classList.remove('active');
+        h.classList.remove('active');
+        if(level==='facile') f.classList.add('active');
+        else if(level==='moyen') m.classList.add('active');
+        else h.classList.add('active');
+      }
+    }
+
     function c4Drop(col){ 
       for(let r=C4_H-1;r>=0;r--){ 
         if(!c4Grid[r][col]){ 
@@ -978,6 +1010,7 @@
       } 
       return -1; 
     }
+
     function c4WinAt(r,c){
       const p=c4Grid[r][c]; 
       if(!p) return false;
@@ -998,8 +1031,143 @@
       }
       return false;
     }
+
+    function c4CheckFull(){
+      return c4Grid[0].every(v=>v!==0);
+    }
+
+    function c4GetAvailableCols(){
+      const cols=[];
+      for(let c=0;c<C4_W;c++){
+        if(c4Grid[0][c]===0) cols.push(c);
+      }
+      return cols;
+    }
+
+    function c4AIEasy(){
+      const cols=c4GetAvailableCols();
+      return cols[Math.floor(Math.random()*cols.length)];
+    }
+
+    function c4AIMedium(){
+      for(let c of c4GetAvailableCols()){
+        const r=c4Drop(c);
+        if(r>=0){
+          if(c4WinAt(r,c)){
+            c4Grid[r][c]=0;
+            return c;
+          }
+          c4Grid[r][c]=0;
+        }
+      }
+      
+      const opponent = c4Player===1? 2 : 1;
+      for(let c of c4GetAvailableCols()){
+        const r=c4Drop(c);
+        if(r>=0){
+          c4Grid[r][c]=opponent;
+          if(c4WinAt(r,c)){
+            c4Grid[r][c]=0;
+            return c;
+          }
+          c4Grid[r][c]=0;
+        }
+      }
+      
+      const cols=c4GetAvailableCols();
+      if(cols.includes(3)) return 3;
+      return cols[Math.floor(Math.random()*cols.length)];
+    }
+
+    function c4AIHard(){
+      let bestCol=-1, bestScore=-Infinity;
+      
+      for(let c of c4GetAvailableCols()){
+        const r=c4Drop(c);
+        if(r>=0){
+          let score=0;
+          
+          if(c4WinAt(r,c)){
+            c4Grid[r][c]=0;
+            return c;
+          }
+          
+          const opponent = c4Player===1? 2 : 1;
+          c4Grid[r][c]=opponent;
+          if(c4WinAt(r,c)) score=500;
+          c4Grid[r][c]=c4Player;
+          
+          if(c===3) score+=10;
+          else if(c===2 || c===4) score+=5;
+          
+          const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+          for(const [dx,dy] of dirs){
+            let count=1;
+            for(let s=1;s<4;s++){
+              const x=c+dx*s, y=r+dy*s;
+              if(y<0||y>=C4_H||x<0||x>=C4_W) break;
+              if(c4Grid[y][x]===c4Player) count++;
+              else if(c4Grid[y][x]!==0) break;
+            }
+            score += count*count;
+          }
+          
+          c4Grid[r][c]=0;
+          
+          if(score>bestScore){
+            bestScore=score;
+            bestCol=c;
+          }
+        }
+      }
+      
+      return bestCol>=0? bestCol : c4AIEasy();
+    }
+
+    function c4AIMove(){
+      if(!c4GameActive || c4GameMode!=='solo' || c4Player!==2) return;
+      
+      let col;
+      if(c4Difficulty==='facile') col=c4AIEasy();
+      else if(c4Difficulty==='moyen') col=c4AIMedium();
+      else col=c4AIHard();
+      
+      if(col>=0){
+        setTimeout(()=>{
+          const container = document.getElementById('c4Wrap');
+          if(!container) return;
+          
+          const row=c4Drop(col);
+          if(row<0) return;
+          
+          drawC4(container);
+          
+          if(c4WinAt(row,col)){
+            c4GameActive=false;
+            const info=document.getElementById('c4Info');
+            if(info) info.innerHTML=`<span style="color:#4fc3f7;font-size:1.3rem;">L'IA a gagné ! 🤖</span>`;
+            container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true);
+            return;
+          }
+          
+          if(c4CheckFull()){
+            c4GameActive=false;
+            const info=document.getElementById('c4Info');
+            if(info) info.innerHTML=`<span style="color:#A48D6F;font-size:1.3rem;">Égalité ! 🤝</span>`;
+            container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true);
+            return;
+          }
+          
+          c4Player=1;
+          const info=document.getElementById('c4Info');
+          if(info) info.textContent=`À toi de jouer ! (Rouge)`;
+        }, 500);
+      }
+    }
+
     function drawC4(container){
       const board=container.querySelector('#c4Board'); 
+      if(!board) return;
       board.innerHTML='';
       for(let r=0;r<C4_H;r++)for(let c=0;c<C4_W;c++){
         const cell=document.createElement('div');
@@ -1007,28 +1175,69 @@
         board.appendChild(cell);
       }
     }
+
     function initConnect4(container){
       container.innerHTML=`
-        <p>Clique une colonne pour jouer. Aligne 4 pour +1 point.</p>
+        <div class="game-mode-selector">
+          <button class="mode-btn active" id="c4SoloBtn" onclick="c4ChangeMode('solo')">🤖 Solo (vs IA)</button>
+          <button class="mode-btn" id="c4DuoBtn" onclick="c4ChangeMode('duo')">👥 Duo</button>
+        </div>
+        <div class="game-mode-selector" id="c4DifficultySelector" style="margin-top:10px;">
+          <button class="mode-btn" id="c4FacileBtn" onclick="c4ChangeDifficulty('facile')">😊 Facile</button>
+          <button class="mode-btn active" id="c4MoyenBtn" onclick="c4ChangeDifficulty('moyen')">🧠 Moyen</button>
+          <button class="mode-btn" id="c4DifficileBtn" onclick="c4ChangeDifficulty('difficile')">🔥 Difficile</button>
+        </div>
+        <div id="c4Info" style="color:#A48D6F;margin:15px 0;font-size:1.1rem;">À toi de jouer ! (Rouge)</div>
         <div id="c4Cols" style="display:grid;grid-template-columns:repeat(7,76px);gap:6px;justify-content:center;margin-bottom:6px;">
           ${Array(C4_W).fill(0).map((_,i)=>`<button class="action-btn" data-col="${i}">↓</button>`).join('')}
         </div>
         <div id="c4Board" style="display:grid;grid-template-columns:repeat(7,64px);justify-content:center;background:#0d0d0d;padding:8px;border-radius:12px;border:2px solid #A48D6F;"></div>
+        <div style="margin-top:15px;">
+          <button class="action-btn" onclick="c4New();drawC4(document.getElementById('c4Wrap'));">🔄 Nouvelle partie</button>
+        </div>
       `;
+      
       c4New(); 
       drawC4(container);
+      
       container.querySelectorAll('#c4Cols button').forEach(btn=>{
         btn.onclick=()=>{
+          if(!c4GameActive) return;
+          
           const col=+btn.getAttribute('data-col'); 
           const row=c4Drop(col); 
           if(row<0) return;
+          
           drawC4(container);
-          if(c4WinAt(row,col)){ 
-            if(currentUserName) addWinPoint(currentUserName); 
-            container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true); 
+          
+          if(c4WinAt(row,col)){
+            c4GameActive=false;
+            const winner = c4Player===1? 'Rouge' : 'Bleu';
+            const info=document.getElementById('c4Info');
+            if(info) info.innerHTML=`<span style="color:${c4Player===1?'#ff6b9d':'#4fc3f7'};font-size:1.3rem;">${winner} a gagné ! 🎉</span>`;
+            
+            if(c4Player===1 && currentUserName) addWinPoint(currentUserName);
+            container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true);
             return; 
           }
+          
+          if(c4CheckFull()){
+            c4GameActive=false;
+            const info=document.getElementById('c4Info');
+            if(info) info.innerHTML=`<span style="color:#A48D6F;font-size:1.3rem;">Égalité ! 🤝</span>`;
+            container.querySelectorAll('#c4Cols button').forEach(b=>b.disabled=true);
+            return;
+          }
+          
           c4Player=(c4Player===1)?2:1;
+          
+          const info=document.getElementById('c4Info');
+          if(c4GameMode==='duo'){
+            if(info) info.textContent=`Tour de ${c4Player===1?'Rouge':'Bleu'}`;
+          } else {
+            if(info) info.textContent=`L'IA réfléchit... 🤖`;
+            c4AIMove();
+          }
         };
       });
     }
