@@ -265,6 +265,30 @@
     <div class="score-popup" id="scorePopup">+1 point ! ✨</div>
   </div>
 
+  <!-- Firebase SDK (compat) + Config -->
+  <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-storage-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2NaFrHU1L-371vMXUuyxr9fHZYz3ePj8",
+      authDomain: "lesfeygame.firebaseapp.com",
+      projectId: "lesfeygame",
+      storageBucket: "lesfeygame.appspot.com",
+      messagingSenderId: "799524380159",
+      appId: "1:799524380159:web:83b43bdbdd37534dff1bca",
+      measurementId: "G-2XTS86C96K"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const auth = firebase.auth();
+    auth.signInAnonymously();
+    window.FB = { db, storage, auth };
+  </script>
+
+  <!-- Script principal -->
   <script>
     // Audio toggle
     let isMuted=false;
@@ -296,7 +320,7 @@
       setTimeout(()=>{ popup.style.display='none'; },2000);
     }
 
-    // ============ Leaderboard (weekly, localStorage) ============
+    // ============ Semaine ISO ============
     function getWeekId(d=new Date()){
       const date=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
       date.setUTCDate(date.getUTCDate()+4-(date.getUTCDay()||7));
@@ -306,26 +330,27 @@
       const ww=String(weekNo).padStart(2,'0');
       return `${yy}-${ww}`;
     }
-    const LB_NS='leaderboard';
-    function lbKey(){ return `${LB_NS}:${getWeekId()}`; }
-    function getLeaderboard(){ const raw=localStorage.getItem(lbKey()); return raw?JSON.parse(raw):{}; }
-    function setLeaderboard(obj){ localStorage.setItem(lbKey(), JSON.stringify(obj)); }
+
+    // ============ Leaderboard partagé (Firestore) ============
+    function lbPath(){ return `leaderboards/${getWeekId()}/scores`; }
+    async function addWinPoint(name){
+      if(!name || !window.FB) return;
+      const ref = FB.db.collection(lbPath()).doc(name.trim().toLowerCase());
+      const snap = await ref.get();
+      if(!snap.exists){ await ref.set({ name, points: 1 }); }
+      else{ await ref.update({ points: firebase.firestore.FieldValue.increment(1) }); }
+    }
     function renderLeaderboard(){
       const ul=document.getElementById('leaderboardList');
       const w=document.getElementById('lbWeek');
-      if(!ul||!w) return;
+      if(!ul||!w||!window.FB) return;
       w.textContent=getWeekId();
-      const table=getLeaderboard();
-      const entries=Object.entries(table).sort((a,b)=>b[1]-a[1]).slice(0,8);
-      ul.innerHTML= entries.length ? entries.map(([n,s])=>`<li><span>${n}</span><span>${s} pt</span></li>`).join('') : `<li><span>Aucun point</span><span>—</span></li>`;
-    }
-    function addWinPoint(playerName){
-      if(!playerName) return;
-      const table=getLeaderboard();
-      table[playerName]=(table[playerName]||0)+1;
-      setLeaderboard(table);
-      renderLeaderboard();
-      showScorePopup(`+1 point pour ${playerName} ✨`);
+      FB.db.collection(lbPath()).orderBy('points','desc').limit(10).onSnapshot((snap)=>{
+        if(snap.empty){ ul.innerHTML = `<li><span>Aucun point</span><span>—</span></li>`; return; }
+        ul.innerHTML = snap.docs.map(d=>{
+          const v=d.data(); return `<li><span>${v.name}</span><span>${v.points} pt</span></li>`;
+        }).join('');
+      });
     }
 
     // Identity
@@ -339,14 +364,21 @@
     const lbSaveBtn=document.getElementById('lbSave');
     if(lbNameInput){ lbNameInput.value=currentUserName; }
     if(lbSaveBtn){
-      lbSaveBtn.onclick=()=>{
+      lbSaveBtn.onclick=async ()=>{
         setUserName(lbNameInput.value);
+        // crée le doc si absent (0 point) pour affichage immédiat
+        if(currentUserName){
+          const ref = FB.db.collection(lbPath()).doc(currentUserName.toLowerCase());
+          const snap = await ref.get();
+          if(!snap.exists) await ref.set({ name: currentUserName, points: 0 });
+        }
+        renderLeaderboard();
         showScorePopup(`Nom enregistré: ${currentUserName}`);
       };
     }
     renderLeaderboard();
 
-    // ============ Design Studio (canvas + galerie) ============
+    // ============ Design Studio (canvas + Galerie publique Firebase) ============
     let canvas, ctx, isDrawing=false, currentColor='#ff6b9d', brushSize=5;
     function initCanvas(){
       canvas=document.getElementById('drawingCanvas');
@@ -367,39 +399,50 @@
     function changeBrushSize(size){ brushSize=size; if(ctx) ctx.lineWidth=size; const el=document.getElementById('brushSizeValue'); if(el) el.textContent=size+'px'; }
     function clearCanvas(){ if(ctx&&canvas) ctx.clearRect(0,0,canvas.width,canvas.height); }
 
+    // Galerie publique (Storage + Firestore)
     function saveDrawingToGallery(){
       const nameInput=document.getElementById('artistName');
-      const userName = nameInput ? nameInput.value.trim() : currentUserName;
+      const userName = (nameInput?.value || currentUserName || '').trim();
       if(!userName){ alert("Entre ton prénom avant de sauvegarder 💅"); return; }
       setUserName(userName); if(lbNameInput) lbNameInput.value=currentUserName;
+      if(!window.FB){ alert('Firebase indisponible'); return; }
+      if(!canvas){ alert('Canvas introuvable'); return; }
 
-      const imageData = canvas.toDataURL('image/png');
-      const drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
-      drawings.push({ id:Date.now(), author:userName, image:imageData, date:new Date().toLocaleDateString('fr-FR') });
-      localStorage.setItem('drawingsGallery', JSON.stringify(drawings));
-      showScorePopup(`Dessin sauvegardé par ${userName} 🎨`);
-      loadDrawingsGallery();
+      canvas.toBlob(async (blob)=>{
+        if(!blob){ alert('Aucun dessin à sauvegarder'); return; }
+        const weekId = getWeekId();
+        const filePath = `drawings/${weekId}/${userName}/${Date.now()}.png`;
+        const fileRef = FB.storage.ref(filePath);
+        await fileRef.put(blob);
+        const url = await fileRef.getDownloadURL();
+        await FB.db.collection('drawings').add({
+          author: userName, url, weekId, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showScorePopup(`Dessin sauvegardé !`);
+      }, 'image/png');
     }
     function loadDrawingsGallery(){
+      if(!window.FB) return;
       const gal=document.getElementById('drawingsGallery'); if(!gal) return;
-      const drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
-      if(drawings.length===0){ gal.innerHTML='<p style="text-align:center;color:#ccc;padding:20px;">Aucun dessin encore... ✨</p>'; return; }
-      gal.innerHTML = drawings.slice().reverse().map(d=>`
-        <div class="drawing-item">
-          <button class="delete-btn" onclick="deleteDrawing(${d.id})">🗑️</button>
-          <img src="${d.image}" alt="Dessin de ${d.author}"/>
-          <div class="drawing-author">✨ ${d.author}</div>
-        </div>
-      `).join('');
+      FB.db.collection('drawings')
+        .where('weekId','==', getWeekId())
+        .orderBy('createdAt','desc')
+        .onSnapshot((snap)=>{
+          if(snap.empty){
+            gal.innerHTML = '<p style="text-align:center;color:#ccc;padding:20px;">Aucun dessin encore... ✨</p>';
+            return;
+          }
+          gal.innerHTML = snap.docs.map(d=>{
+            const v=d.data();
+            return `
+              <div class="drawing-item">
+                <img src="${v.url}" alt="Dessin de ${v.author}"/>
+                <div class="drawing-author">✨ ${v.author}</div>
+              </div>
+            `;
+          }).join('');
+        });
     }
-    function deleteDrawing(id){
-      if(!confirm('Supprimer ce dessin ?')) return;
-      let drawings = JSON.parse(localStorage.getItem('drawingsGallery') || '[]');
-      drawings = drawings.filter(d=> d.id!==id);
-      localStorage.setItem('drawingsGallery', JSON.stringify(drawings));
-      loadDrawingsGallery();
-    }
-    window.deleteDrawing=deleteDrawing;
 
     // ============ Morpion (tic-tac-toe) ============
     let tictactoeBoard=['','','','','','','','',''];
@@ -486,12 +529,11 @@
       if(sd) sd.textContent=tictactoeScore.draws;
     }
 
-    // ============ Nouveaux mini-jeux ============
-    // Fallback in case leaderboard not set elsewhere
+    // ============ Mini-jeux (Tetris / Wordle / Memory / Connect4) ============
     window.addWinPoint = window.addWinPoint || function(){};
     window.currentUserName = window.currentUserName || currentUserName;
 
-    // --- Mini Tetris ---
+    // --- Mini Tetris (version compacte) ---
     let tCanvas, tCtx, tGrid, tPiece, tTimer, tCleared;
     const T_W=10, T_H=20, T_S=24;
     const TETROS={ I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]], L:[[1,0],[1,0],[1,1]], J:[[0,1],[0,1],[1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]] };
@@ -674,7 +716,7 @@
       });
     }
 
-    // ============ startMinigame switch ============
+    // ============ startMinigame ============
     function startMinigame(type){
       const panel=document.getElementById('minigamePanel');
       const title=document.getElementById('gameTitle');
@@ -711,7 +753,6 @@
             </div>
           `;
           setTimeout(()=>{ initCanvas(); loadDrawingsGallery(); },100);
-          // sync name to leaderboard input
           setTimeout(()=>{
             const nm=document.getElementById('artistName');
             if(nm){ nm.addEventListener('input', (e)=>{ setUserName(e.target.value); const lb=document.getElementById('lbName'); if(lb) lb.value=currentUserName; }); }
